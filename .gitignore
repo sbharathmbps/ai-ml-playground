@@ -1,0 +1,26 @@
+# Model files
+*.pkl
+*.pt
+*.pth
+*.onnx
+*.h5
+
+# Images
+*.jpg
+*.jpeg
+*.png
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Dataset folders
+datasets/
+data/
+
+# Virtual environments
+venv/
+.env
+
+# Logs
+*.log

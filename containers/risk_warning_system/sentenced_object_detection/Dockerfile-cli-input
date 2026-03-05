@@ -1,0 +1,6 @@
+FROM sentenced-obj-det-env:python-3.10-slim
+WORKDIR /app
+
+COPY codes /app/
+
+ENTRYPOINT ["python", "/app/sentence_to_bbox.py"]

@@ -1,0 +1,11 @@
+{
+  "risk_detected": true,
+  "risk_level": "high",
+  "risk_factors": [
+    "Pedestrian crossing in the middle of traffic without clear signal or protection",
+    "Multiple vehicles (cars, auto-rickshaws, motorcycles) in close proximity to pedestrian",
+    "Traffic congestion increasing risk of collision",
+    "Pedestrian not looking both ways before crossing"
+  ],
+  "explanation": "A pedestrian is crossing a busy street with multiple vehicles, including cars and auto-rickshaws, without apparent traffic control or pedestrian crossing signal. This creates a high risk of collision."
+}

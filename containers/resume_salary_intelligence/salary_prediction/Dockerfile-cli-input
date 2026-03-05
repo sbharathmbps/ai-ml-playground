@@ -1,0 +1,6 @@
+FROM risk-detection-env:python-3.12
+WORKDIR /app
+
+COPY codes /app/
+
+ENTRYPOINT ["python", "/app/risk_detection.py"]
