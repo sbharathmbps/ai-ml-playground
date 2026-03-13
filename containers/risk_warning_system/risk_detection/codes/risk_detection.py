@@ -12,6 +12,8 @@ import argparse
 import logging
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText
+from database_entry import get_local_session, update_risk_detection
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -121,7 +123,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Qwen Risk Detection")
 
     parser.add_argument("--src", help="Input image path")
-    parser.add_argument("--output_json", help="Output json path")
+    parser.add_argument("--dest", help="Output path")
     parser.add_argument("--config", help="Optional config file", default=None)
 
     parser.add_argument("--workflow_name", default="workflow")
@@ -130,7 +132,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     IMAGE_PATH = args.src
-    OUTPUT_JSON = args.output_json
+    OUTPUT_PATH = args.dest
 
     workflow_name = args.workflow_name
     folder_name = args.folder_name
@@ -139,10 +141,12 @@ if __name__ == '__main__':
 
     final_output = analyze_image_for_risk(IMAGE_PATH)
 
-    if OUTPUT_JSON:
-        os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
-        with open(OUTPUT_JSON, "w") as f:
-            json.dump(final_output, f, indent=2)
+    # if OUTPUT_JSON:
+    #     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
+    #     with open(OUTPUT_JSON, "w") as f:
+    #         json.dump(final_output, f, indent=2)
 
     logging.info("\nFinal Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
+    SessionLocal, engine = get_local_session()
+    update_risk_detection(SessionLocal, folder_name, final_output)

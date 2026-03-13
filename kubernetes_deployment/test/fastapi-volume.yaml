@@ -1,0 +1,37 @@
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: inference-engine-pv
+  namespace: app
+spec:
+  capacity:
+    storage: 100Gi
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data/ml-platform/containers/Fastapi_inferencing/codes   # Host directory to mount
+    type: Directory
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: inference-engine-pvc
+  namespace: app
+  labels:
+    app: inference-engine-app
+spec:
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 100Gi
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  volumeName: inference-engine-pv
+---

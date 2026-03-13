@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-engine-app-deployment
+  labels:
+    app: inference-engine-app
+  namespace: app
+spec:
+  selector:
+    matchLabels:
+      app: inference-engine-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: inference-engine-app
+    spec:
+      serviceAccountName: fastapi-client
+      # imagePullSecrets:
+      # - name: artifact-registery-secret
+      containers:
+      - name: inference-engine-app
+        image: inference-engine-fastapi-cli-input:python-3.11.13-slim
+        command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+        imagePullPolicy: Always
+            # CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: "/mnt"
+          name: inference-engine-model-pvc-volume
+        - mountPath: "/app"
+          name: inference-engine-pvc-volume
+        - mountPath: "/input"
+          name: image-input-pvc-uvision-ws-volume
+        - mountPath: /var/run/secrets/tokens
+          name: argo-ui-token
+          readOnly: true
+
+        envFrom:
+        - secretRef:
+            name: uvision-inference-engine-database-secret
+        - configMapRef:
+            name: inference-engine-env-configmap
+              
+      volumes:
+      - name: inference-engine-model-pvc-volume
+        persistentVolumeClaim:
+          claimName: inference-engine-model-pvc # Reference to the PVC
+      - name: inference-engine-pvc-volume
+        persistentVolumeClaim:
+          claimName: inference-engine-pvc # Reference to the PVC
+      - name: image-input-pvc-uvision-ws-volume
+        persistentVolumeClaim:
+          claimName: image-input-pvc-uvision-ws
+      - name: argo-ui-token
+        projected:
+          sources:
+            - serviceAccountToken:
+                # audience: "https://kubernetes.default.svc"
+                expirationSeconds: 86400
+                path: token
+
+
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-engine-app-service
+  labels:
+    app: inference-engine-app
+  namespace: app
+  
+spec:
+  selector:
+    app: inference-engine-app
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP

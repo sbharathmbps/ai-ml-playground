@@ -1,0 +1,104 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+    generateName: ml-workflow-
+spec:
+    # imagePullSecrets:
+    # - name: artifact-registery-secret
+    entrypoint: main-dag
+    arguments:
+      parameters:
+      - name: folder_name
+      - name: risk-detection
+        value: "true"
+      - name: sentenced-object-detection
+        value: "true"
+
+    volumes:
+        - name: input-data
+          persistentVolumeClaim:
+            claimName: image-input-pvc
+
+    templates:
+          - name: main-dag
+            dag:
+                tasks:
+                  # Level 1: 5 parallel jobs
+                  - name: risk-detection
+                    template: risk-detection-template
+                    when: "{{workflow.parameters.risk-detection}} == true"
+                    arguments:
+                        parameters: 
+                        - name: src
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/"
+                        - name: dest
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/output/"                      
+                        - name: config
+                          value: "/mnt/data/ml-platform/containers/risk_warning_system/risk_warning_system.json"
+
+                  
+
+                  #  automate ----------------------------------
+
+                  - name: sentenced-object-detection
+                    template: sentenced-object-detection-template
+                    when: "{{workflow.parameters.sentenced-object-detection}} == true"
+                    depends: "risk-detection"
+                    arguments:
+                        parameters: 
+                        - name: src
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/"
+                        - name: dest
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/output/"
+                        - name: config
+                          value: "/mnt/data/ml-platform/containers/risk_warning_system/risk_warning_system.json"
+
+
+
+          - name: risk-detection-template
+            inputs:
+                parameters:
+                    - name:  src
+                    - name:  dest                  
+                    - name:  config
+
+            container:
+                image: risk-detection-cli-input:python-3.12
+                # imagePullPolicy: Always
+                command: ["python"]
+                args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                volumeMounts:
+                    - name: input-data
+                      mountPath: /mnt/data
+                      
+                envFrom:
+                    - secretRef:
+                        name: db-ml-platform                      
+                #         key: api-key
+                    # - name: gcs-bucket
+                    #   mountPath: /mnt/gcs
+
+
+
+          - name: sentenced-object-detection-template
+            inputs:
+                parameters:
+                    - name:  src
+                    - name:  dest                  
+                    - name:  config
+
+            container:
+                image: sentenced-obj-det-cli-input:python-3.10-slim
+                # imagePullPolicy: Always
+                command: ["python"]
+                args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                volumeMounts:
+                    - name: input-data
+                      mountPath: /mnt/data
+                      
+                envFrom:
+                    - secretRef:
+                        name: db-ml-platform                      
+                #         key: api-key
+                    # - name: gcs-bucket
+                    #   mountPath: /mnt/gcs

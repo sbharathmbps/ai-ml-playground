@@ -12,6 +12,8 @@ import argparse
 import logging
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoProcessor, AutoModelForCausalLM
+from database_entry import get_local_session, get_risk_factors, add_sentenced_detection
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -161,8 +163,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Florence Risk Grounding")
 
     parser.add_argument("--src", help="Input image path")
-    parser.add_argument("--risk_json", help="JSON file containing risk factors")
-    parser.add_argument("--output", help="Output annotated image path")
+    parser.add_argument("--dest", help="Output path")
     parser.add_argument("--config", help="Optional config file", default=None)
 
     parser.add_argument("--workflow_name", default="workflow")
@@ -171,24 +172,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     IMAGE_PATH = args.src
-    RISK_JSON = args.risk_json
-    OUTPUT_PATH = args.output
+    OUTPUT_PATH = args.dest
 
     workflow_name = args.workflow_name
     folder_name = args.folder_name
 
     # ================= LOAD RISK FACTORS =================
-
-    if RISK_JSON:
-        with open(RISK_JSON, "r") as f:
-            risk_factors = json.load(f)
-    else:
-        raise ValueError("Risk JSON file required")
+    SessionLocal, engine = get_local_session()
+    risk_factors = get_risk_factors(SessionLocal, folder_name)
 
     # ================= RUN PIPELINE =================
 
     final_output = run_florence_risk_pipeline(IMAGE_PATH,risk_factors,OUTPUT_PATH)
-
+    add_sentenced_detection(SessionLocal, folder_name, final_output)
     logging.info("\n Final Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
 
