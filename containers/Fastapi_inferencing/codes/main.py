@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
-BASE_IMAGE_PATH = "/mnt/data/inputs"
+BASE_IMAGE_PATH = "/mnt/data/inputs/"
 ARGO_WORKFLOW_YAML_PATH = "/mnt/data/ml-platform/containers"
 ARGO_WORKFLOW_API_URL = "http://argo-workflows-server.argo.svc.cluster.local:2746/api/v1/workflows/argo"
 # ARGO_WORKFLOW_API_URL = "http://localhost:2746/api/v1/workflows/argo"
@@ -39,7 +39,10 @@ async def upload_image(file: UploadFile = File(...)):
 
     os.makedirs(BASE_IMAGE_PATH, exist_ok=True)
 
-    image_path = os.path.join(BASE_IMAGE_PATH, image_id)
+    image_folder = os.path.join(BASE_IMAGE_PATH, image_id)
+    os.makedirs(image_folder, exist_ok=True)
+
+    image_path = os.path.join(image_folder, file.filename)
 
     with open(image_path, "wb") as buffer:
         buffer.write(await file.read())
@@ -50,7 +53,6 @@ async def upload_image(file: UploadFile = File(...)):
         "image_id": image_id,
         "image_path": image_path
     }
-
 
 
 class RiskPipelineRequest(BaseModel):
