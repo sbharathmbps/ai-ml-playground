@@ -1,6 +1,7 @@
 import os
 import uuid
 import time
+import logging
 from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
@@ -8,15 +9,28 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from run_workflow import run_argo_workflow 
 from database_entry import get_local_session, insert_uploaded_image
+logging.basicConfig(level=logging.INFO)
 
 
 app = FastAPI()
 
 BASE_IMAGE_PATH = "/mnt/data/inputs"
 ARGO_WORKFLOW_YAML_PATH = "/mnt/data/ml-platform/containers"
-ARGO_WORKFLOW_API_URL = "https://argo-server.argo.svc.cluster.local:2746/api/v1/workflows/argo"
+ARGO_WORKFLOW_API_URL = "http://argo-workflows-server.argo.svc.cluster.local:2746/api/v1/workflows/argo"
+# ARGO_WORKFLOW_API_URL = "http://localhost:2746/api/v1/workflows/argo"
 
 SessionLocal, engine = get_local_session()
+
+class AuthTokenProvider:
+    def get(self):
+        token_path = os.getenv("TOKEN_PATH", "/var/run/secrets/tokens/token")
+        with open(token_path, "r") as f:
+            token = f.read().strip()
+        if token.startswith("Bearer "):
+            token = token[len("Bearer "):].strip()
+        return token
+token_provider = AuthTokenProvider()
+
 
 @app.post("/upload_image/")
 async def upload_image(file: UploadFile = File(...)):
@@ -66,7 +80,8 @@ async def risk_warning_system(data: RiskPipelineRequest):
         dependency_chart_path=dependency_chart_path,
         folder_name=folder_name,
         data=data_dict,
-        namespace="argo"
+        namespace="argo",
+        auth_token_provider=token_provider
     )
 
     return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name).model_dump(),status_code=status_code)

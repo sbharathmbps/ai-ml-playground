@@ -144,8 +144,9 @@ def run_florence_risk_pipeline(image_path, risk_factors, output_image_path):
 
         all_results.append(result)
 
-    annotated = draw_results(image.copy(), all_results)
-    annotated.save(output_image_path)
+        annotated = draw_results(image.copy(), [result])
+        file_name = sentence[:25].replace(" ", "_").replace("/", "_")
+        annotated.save(os.path.join(output_image_path, f"{file_name}.jpg"))
 
     logging.info(f"\n Saved annotated image to: {output_image_path}")
 
@@ -171,11 +172,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    IMAGE_PATH = args.src
+    src = args.src
     OUTPUT_PATH = args.dest
+
 
     workflow_name = args.workflow_name
     folder_name = args.folder_name
+
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
+    IMAGE_PATH = os.path.join(src, os.listdir(src)[0])
 
     # ================= LOAD RISK FACTORS =================
     SessionLocal, engine = get_local_session()

@@ -162,12 +162,12 @@ def update_risk_detection(SessionLocal, image_id, result):
         session.close()
 
 
-def get_risk_factors(SessionLocal, folder_name):
+def get_risk_factors(SessionLocal, image_uuid):
 
     session = SessionLocal()
 
     try:
-        image_uuid = UUID(folder_name)
+        # image_uuid = UUID(folder_name)
 
         stmt = select(RiskDetection.risk_factors).where(
             RiskDetection.image_id == image_uuid
@@ -176,7 +176,7 @@ def get_risk_factors(SessionLocal, folder_name):
         result = session.execute(stmt).scalar_one_or_none()
 
         if result is None:
-            print(f"No risk factors found for image_id: {folder_name}")
+            print(f"No risk factors found for image_id: {image_uuid}")
             return []
 
         return result
@@ -190,13 +190,13 @@ def get_risk_factors(SessionLocal, folder_name):
 
 
 
-def add_sentenced_detection(SessionLocal, folder_name, final_output):
+def add_sentenced_detection(SessionLocal, image_uuid, final_output):
 
     session = SessionLocal()
 
     try:
 
-        image_uuid = UUID(folder_name)
+        # image_uuid = UUID(folder_name)
 
         grounded_results = final_output.get("grounded_results", [])
 

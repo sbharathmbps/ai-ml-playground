@@ -5,6 +5,7 @@ metadata:
 spec:
     # imagePullSecrets:
     # - name: artifact-registery-secret
+    serviceAccountName: argo-workflow
     entrypoint: main-dag
     arguments:
       parameters:
@@ -65,7 +66,7 @@ spec:
             container:
                 image: risk-detection-cli-input:python-3.12
                 # imagePullPolicy: Always
-                command: ["python"]
+                command: ["python", "/app/risk_detection.py"]
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
                 volumeMounts:
                     - name: input-data
@@ -90,7 +91,7 @@ spec:
             container:
                 image: sentenced-obj-det-cli-input:python-3.10-slim
                 # imagePullPolicy: Always
-                command: ["python"]
+                command: ["python", "/app/sentence_to_bbox.py"]
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
                 volumeMounts:
                     - name: input-data

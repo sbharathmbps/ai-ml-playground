@@ -32,7 +32,8 @@ processor = AutoProcessor.from_pretrained(MODEL_ID)
 
 model = AutoModelForImageTextToText.from_pretrained(
     MODEL_ID,
-    torch_dtype=torch_dtype,
+    torch_dtype=torch.float16,
+    low_cpu_mem_usage=True,
     device_map="auto"
 )
 
@@ -131,11 +132,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    IMAGE_PATH = args.src
+    src = args.src
     OUTPUT_PATH = args.dest
 
     workflow_name = args.workflow_name
     folder_name = args.folder_name
+
+    IMAGE_PATH = os.path.join(src, os.listdir(src)[0])
 
     # ================= RUN PIPELINE =================
 

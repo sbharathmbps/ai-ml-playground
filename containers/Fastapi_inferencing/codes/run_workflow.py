@@ -6,6 +6,7 @@ import yaml
 import json
 import jwt
 import os
+logging.basicConfig(level=logging.INFO)
 
 
 def get_workflow_parameters(assets, dependency_chart_path, folder_name, workflow_template, data):
