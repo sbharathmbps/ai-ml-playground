@@ -1,13 +1,9 @@
-import os
 import json
-import argparse
-from collections import OrderedDict
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-
-from database_entry import get_local_session, get_resume_user_field, update_market_ctc_by_resume
 
 
 MODEL_PATH = "/mnt/data/models/salary_prediction/salary_prediction_model.pkl"
@@ -64,36 +60,36 @@ CATEGORICAL_BASE_COLUMNS = [
 # This was dropped in the final training matrix after VIF filtering.
 VIF_DROPS = ["Total_Experience"]
 
-# Field order must remain exactly in this shape.
-PERSON_FIELD_ORDER = [
-    "Applicant_ID",
-    "Total_Experience",
-    "Total_Experience_in_field_applied",
-    "Department",
-    "Role",
-    "Industry",
-    "Organization",
-    "Designation",
-    "Education",
-    "Graduation_Specialization",
-    "University_Grad",
-    "Passing_Year_Of_Graduation",
-    "PG_Specialization",
-    "University_PG",
-    "Passing_Year_Of_PG",
-    "PHD_Specialization",
-    "University_PHD",
-    "Passing_Year_Of_PHD",
-    "Curent_Location",
-    "Preferred_location",
-    "Current_CTC",
-    "Inhand_Offer",
-    "Last_Appraisal_Rating",
-    "No_Of_Companies_worked",
-    "Number_of_Publications",
-    "Certifications",
-    "International_degree_any",
-]
+# Hardcoded input JSON for a single person.
+HARDCODED_PERSON = {
+    "Applicant_ID": 99999,
+    "Total_Experience": 6,
+    "Total_Experience_in_field_applied": 5,
+    "Department": "Engineering",
+    "Role": "Software Developer",
+    "Industry": "IT Services",
+    "Organization": "Private",
+    "Designation": "Senior Software Engineer",
+    "Education": "PG",
+    "Graduation_Specialization": "Computer Science",
+    "University_Grad": "Delhi",
+    "Passing_Year_Of_Graduation": 2018,
+    "PG_Specialization": "Data Science",
+    "University_PG": "Delhi",
+    "Passing_Year_Of_PG": 2020,
+    "PHD_Specialization": np.nan,
+    "University_PHD": np.nan,
+    "Passing_Year_Of_PHD": np.nan,
+    "Curent_Location": "Bangalore",
+    "Preferred_location": "Bangalore",
+    "Current_CTC": 1800000,
+    "Inhand_Offer": "Y",
+    "Last_Appraisal_Rating": "A",
+    "No_Of_Companies_worked": 3,
+    "Number_of_Publications": 1,
+    "Certifications": 2,
+    "International_degree_any": 0,
+}
 
 
 def _zscore(value: float, mean: float, std: float) -> float:
@@ -154,71 +150,20 @@ def preprocess_one_person(person: dict, model) -> pd.DataFrame:
     return pd.DataFrame([row], columns=model_features)
 
 
-def build_person_payload(user_field: dict) -> dict:
-    user_field = user_field or {}
-
-    cert_value = user_field.get("certifications")
-    cert_count = cert_value
-    if isinstance(cert_value, list):
-        cert_count = len(cert_value)
-
-    ordered = OrderedDict()
-    for key in PERSON_FIELD_ORDER:
-        if key in user_field:
-            ordered[key] = user_field.get(key)
-        elif key == "Applicant_ID":
-            ordered[key] = 99999
-        elif key in ["PHD_Specialization", "University_PHD", "Passing_Year_Of_PHD"]:
-            ordered[key] = np.nan
-        elif key == "Certifications":
-            ordered[key] = cert_count
-        else:
-            ordered[key] = np.nan
-
-    return dict(ordered)
-
-
-# def write_output(dest_dir: str, output: dict) -> None:
-#     os.makedirs(dest_dir, exist_ok=True)
-#     out_file = os.path.join(dest_dir, "salary_prediction_output.json")
-#     with open(out_file, "w", encoding="utf-8") as f:
-#         json.dump(output, f, indent=2)
-
-
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Salary Prediction")
-    parser.add_argument("--src", help="Input path")
-    parser.add_argument("--dest", help="Output path")
-    parser.add_argument("--config", help="Optional config file", default=None)
-    parser.add_argument("--workflow_name", default="workflow")
-    parser.add_argument("--folder_name", default="folder")
-    args = parser.parse_args()
-
-    resume_id = args.folder_name
-
-    SessionLocal, engine = get_local_session()
-    user_field = get_resume_user_field(SessionLocal, resume_id)
-    person_payload = build_person_payload(user_field)
-
     model = joblib.load(MODEL_PATH)
-    features = preprocess_one_person(person_payload, model)
+    features = preprocess_one_person(HARDCODED_PERSON, model)
 
     pred_scaled = float(model.predict(features)[0])
     pred_expected_ctc = (
         pred_scaled * NUMERIC_STATS["Expected_CTC"]["std"]
         + NUMERIC_STATS["Expected_CTC"]["mean"]
     )
-    pred_expected_ctc = round(pred_expected_ctc, 2)
-
-    update_market_ctc_by_resume(SessionLocal, resume_id, pred_expected_ctc)
 
     result = {
-        "input": person_payload,
-        "predicted_expected_ctc": pred_expected_ctc,
-        "resume_id": str(resume_id),
-    }
-
-    # write_output(args.dest, result)
+        "input": HARDCODED_PERSON,
+        "predicted_expected_ctc": round(pred_expected_ctc, 2)
+        }
     print(json.dumps(result, indent=2))
 
 

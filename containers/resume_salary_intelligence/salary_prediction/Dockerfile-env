@@ -3,13 +3,9 @@ FROM ubuntu:22.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/opt/hf-cache \
-    HF_HUB_CACHE=/opt/hf-cache/hub \
-    TRANSFORMERS_CACHE=/opt/hf-cache/transformers \
-    HF_DATASETS_CACHE=/opt/hf-cache/datasets
+    PIP_NO_CACHE_DIR=1
 
-# ================= SYSTEM DEPENDENCIES =================
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -27,16 +23,7 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libbz2-dev \
     liblzma-dev \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    ffmpeg \
-    fonts-dejavu-core \
     && apt-get clean
-
-# ================= INSTALL PYTHON 3.12 =================
 
 WORKDIR /opt
 
@@ -50,56 +37,32 @@ RUN wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz && \
 RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
     ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
 
-# ================= INSTALL PYTHON LIBRARIES =================
-
 WORKDIR /app
 
-COPY requirements.txt .
+COPY requirements.txt /app/requirements.txt
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# ================= PRE-DOWNLOAD MODEL =================
-
-RUN python - <<'PY'
-from transformers import AutoProcessor, AutoModelForImageTextToText
-
-model_id = "Qwen/Qwen3-VL-4B-Instruct"
-
-AutoProcessor.from_pretrained(model_id)
-AutoModelForImageTextToText.from_pretrained(model_id)
-
-print("Qwen model cached successfully")
-PY
-
-
-# ================= FINAL RUNTIME IMAGE =================
+RUN python -m pip install --upgrade pip && \
+    pip install -r /app/requirements.txt
 
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    HF_HOME=/opt/hf-cache \
-    HF_HUB_CACHE=/opt/hf-cache/hub \
-    TRANSFORMERS_CACHE=/opt/hf-cache/transformers \
-    HF_DATASETS_CACHE=/opt/hf-cache/datasets \
-    HF_HUB_OFFLINE=1 \
-    TRANSFORMERS_OFFLINE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    fonts-dejavu-core \
-    ffmpeg \
+    ca-certificates \
     && apt-get clean
 
 COPY --from=builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /opt/hf-cache /opt/hf-cache
 
 RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
     ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
+
+COPY codes /app/
+
+ENTRYPOINT ["python", "/app/salary_prediction.py"]

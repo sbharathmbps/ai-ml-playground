@@ -1,48 +1,43 @@
 import os
-HF_BASE = "/mnt/disks/conda-envs/Dockerize-Platform/Volumes/Image-input/VLM_input/huggingface_cache"
-
-os.environ["HF_HOME"] = HF_BASE
-os.environ["HF_HUB_CACHE"] = f"{HF_BASE}/hub"
-os.environ["TRANSFORMERS_CACHE"] = f"{HF_BASE}/transformers"
-os.environ["HF_DATASETS_CACHE"] = f"{HF_BASE}/datasets"
-
-os.environ["TMPDIR"] = f"{HF_BASE}/tmp"
-os.environ["TEMP"] = f"{HF_BASE}/tmp"
-os.environ["TMP"] = f"{HF_BASE}/tmp"
-
 import json
+import argparse
+import logging
+from pathlib import Path
+
 import torch
-import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-os.environ["HF_HOME"] = HF_BASE
+from database_entry import get_local_session, update_resume_extracted_field
+
+
+HF_BASE = os.getenv("HF_HOME", "/opt/hf-cache")
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_TOKEN"] = "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"
- 
-# ---------------------------
-# 1️⃣ Load LLM (LFM2.5 1.2B)
-# ---------------------------
- 
+
+logging.basicConfig(level=logging.INFO)
+
 MODEL_ID = "LiquidAI/LFM2.5-1.2B-Instruct"
- 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+torch_dtype = torch.bfloat16 if device == "cuda" else torch.float32
+
+logging.info("Loading LFM model...")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
- 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
     device_map="auto",
-    torch_dtype=torch.bfloat16
+    torch_dtype=torch_dtype,
 )
- 
- 
+model.eval()
+logging.info("LFM model loaded")
+
 SYSTEM_PROMPT = """
 You are a resume information extraction agent.
- 
+
 Extract structured data from resumes.
 Return ONLY valid JSON.
 Do NOT include explanations.
 If field is missing return null.
- 
+
 Schema:
 {
   "name": "",
@@ -54,125 +49,87 @@ Schema:
   "certifications": []
 }
 """
- 
-def extract_features_with_llm(resume_text: str):
+
+
+def read_resume_text(src_dir: str) -> str:
+    src_path = Path(src_dir)
+    files = [p for p in src_path.iterdir() if p.is_file()]
+
+    if not files:
+        raise FileNotFoundError(f"No input file found in {src_dir}")
+
+    file_path = files[0]
+
+    for encoding in ("utf-8", "latin-1"):
+        try:
+            return file_path.read_text(encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+
+    raise ValueError(f"Unable to decode input file: {file_path}")
+
+
+def extract_features_with_llm(resume_text: str) -> dict:
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": resume_text}
+        {"role": "user", "content": resume_text},
     ]
- 
+
     inputs = tokenizer.apply_chat_template(
         messages,
         add_generation_prompt=True,
-        tokenizer=True,
-        return_tensors="pt"
+        tokenize=True,
+        return_dict=True,
+        return_tensors="pt",
     ).to(model.device)
 
-    inputs = {k: v.to(model.device) for k, v in inputs.items()}
- 
-    output = model.generate(
-        **inputs,
-        max_new_tokens=512,
-        temperature=0.1
-    )
- 
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=512,
+            temperature=0.1,
+        )
+
     response = tokenizer.decode(
-        output[0][inputs["input_ids"].shape[-1]:],
-        skip_special_tokens=True
+        output[0][inputs["input_ids"].shape[-1] :],
+        skip_special_tokens=True,
     )
- 
+
     try:
-        data = json.loads(response)
-    except:
-        data = {"error": "LLM failed to generate valid JSON", "raw_output": response}
- 
-    return data
-
-if __name__=="__main__": 
-
-     
-    resume_text = """
-Resume – MLOps Engineer
-Name: Arjun Mehta
-Phone: +91 98765 43210
-Email: arjun.mehta.ml@samplemail.com
-Location: Bengaluru, Karnataka
-LinkedIn: linkedin.com/in/arjun-mehta-mlops
-GitHub: github.com/arjun-mlops
-
-Professional Summary
-MLOps Engineer with 4+ years of experience in designing, deploying, and scaling machine learning pipelines in cloud environments. Skilled in CI/CD, model deployment, monitoring, and data pipeline automation. Currently working at Tata Consultancy Services (TCS) as part of the AI & Analytics practice, supporting production-grade ML systems for global enterprise clients.
-
-Work Experience
-MLOps Engineer – Tata Consultancy Services (TCS)
-Jan 2022 – Present | Bengaluru, India
-
-Designed and maintained automated ML pipelines using Kubeflow, Airflow, and MLflow, reducing model deployment time by 40%.
-Built end‑to‑end CI/CD workflows using Azure DevOps and GitHub Actions for ML model packaging, testing, and deployment.
-Containerized ML services using Docker and deployed scalable services on Kubernetes (AKS/EKS).
-Implemented model monitoring dashboards using Prometheus, Grafana, and Azure Application Insights.
-Set up feature stores using Feast, improving data consistency across training and inference.
-Collaborated with data scientists to operationalize NLP and forecasting models for BFSI clients.
+        json_start = response.index("{")
+        return json.loads(response[json_start:])
+    except Exception:
+        return {
+            "error": "LLM failed to generate valid JSON",
+            "raw_output": response,
+        }
 
 
-Technical Skills
-Programming
-Python, Bash, SQL, Go (basic)
-MLOps / ML Platforms
-MLflow, Kubeflow, Airflow, TFX, Feast, DVC
-Cloud
-Azure (primary), AWS (secondary), GCP (basic)
-DevOps & CI/CD
-Docker, Kubernetes, GitHub Actions, Azure DevOps, Terraform, Helm
-Machine Learning
-Scikit-learn, TensorFlow, PyTorch, XGBoost
-Monitoring & Logging
-Prometheus, Grafana, ELK Stack, Application Insights
-
-Projects
-1. Automated Model Deployment Platform
-
-Created a reusable deployment framework for NLP-based classification systems.
-Achieved fully automated data validation → training → evaluation → deployment using MLflow & Airflow.
-Reduced manual intervention near-zero for production rollouts.
-
-2. Real‑Time Fraud Detection Pipeline
-
-Deployed streaming inference pipeline for financial transactions using AWS Lambda, SQS, and Docker.
-Integrated model drift monitoring and auto‑retraining triggers.
-
-3. Feature Store Integration for Enterprise Models
-
-Implemented Feast with Azure Data Lake Storage.
-Enabled consistent feature access across 8 ML teams.
+# def write_output(dest_dir: str, output: dict) -> None:
+#     os.makedirs(dest_dir, exist_ok=True)
+#     out_file = Path(dest_dir) / "field_extraction_output.json"
+#     out_file.write_text(json.dumps(output, indent=2), encoding="utf-8")
 
 
-Education
-B.Tech – Computer Science Engineering
-Visvesvaraya Technological University (VTU), Karnataka
-2017 – 2021
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Resume Field Extraction")
+    parser.add_argument("--src", help="Input resume directory")
+    parser.add_argument("--dest", help="Output path")
+    parser.add_argument("--config", help="Optional config file", default=None)
+    parser.add_argument("--workflow_name", default="workflow")
+    parser.add_argument("--folder_name", default="folder")
 
-Certifications
+    args = parser.parse_args()
 
-Microsoft Certified: Azure Data Scientist Associate
-AWS Certified Machine Learning – Specialty
-TensorFlow Developer Certificate
+    src = args.src
+    folder_name = args.folder_name
+    resume_text = read_resume_text(src)
+    final_output = extract_features_with_llm(resume_text)
 
+    # write_output(args.dest, final_output)
 
-Tools & Technologies
+    logging.info("Final Structured Output:")
+    logging.info(json.dumps(final_output, indent=2))
 
-Version Control: Git, GitLab
-Databases: PostgreSQL, BigQuery, MongoDB
-Message Queues: Kafka, SQS
-IaC: Terraform, ARM
-
-
-Personal Details
-
-Languages: English, Hindi
-Nationality: Indian
-"""
-    fields = extract_features_with_llm(resume_text)
-    print(fields)
-
- 
+    SessionLocal, engine = get_local_session()
+    update_resume_extracted_field(SessionLocal, folder_name, final_output)

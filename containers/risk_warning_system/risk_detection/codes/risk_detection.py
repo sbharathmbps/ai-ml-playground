@@ -28,16 +28,19 @@ torch_dtype = torch.float16 if device == "cuda" else torch.float32
 
 logging.info("Loading Qwen VL model...")
 
-processor = AutoProcessor.from_pretrained(MODEL_ID)
+processor = AutoProcessor.from_pretrained(
+    MODEL_ID,
+    trust_remote_code=True
+)
 
 model = AutoModelForImageTextToText.from_pretrained(
     MODEL_ID,
-    torch_dtype=torch.float16,
-    low_cpu_mem_usage=True,
-    device_map="auto"
+    trust_remote_code=True,
+    torch_dtype=torch_dtype,
+    low_cpu_mem_usage=True
 )
 
-model.eval()
+model.to(device)
 
 logging.info("Qwen VL model loaded")
 

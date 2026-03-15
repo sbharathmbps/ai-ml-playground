@@ -64,7 +64,7 @@ spec:
                     - name:  config
 
             container:
-                image: risk-detection-cli-input:python-3.12
+                image: risk-detection-env:python-3.12
                 # imagePullPolicy: Always
                 command: ["python", "/app/risk_detection.py"]
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
@@ -89,7 +89,7 @@ spec:
                     - name:  config
 
             container:
-                image: sentenced-obj-det-cli-input:python-3.10-slim
+                image: sentenced-obj-det-env:python-3.10-slim
                 # imagePullPolicy: Always
                 command: ["python", "/app/sentence_to_bbox.py"]
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]

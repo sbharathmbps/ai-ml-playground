@@ -59,6 +59,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 
 RUN pip install -r requirements.txt
+RUN pip install --upgrade torch==2.4.1 torchvision==0.19.1 transformers==4.57.1
 
 # ================= PRE-DOWNLOAD MODEL =================
 
@@ -67,8 +68,8 @@ from transformers import AutoProcessor, AutoModelForImageTextToText
 
 model_id = "Qwen/Qwen3-VL-4B-Instruct"
 
-AutoProcessor.from_pretrained(model_id)
-AutoModelForImageTextToText.from_pretrained(model_id)
+AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+AutoModelForImageTextToText.from_pretrained(model_id, trust_remote_code=True)
 
 print("Qwen model cached successfully")
 PY
@@ -104,3 +105,7 @@ COPY --from=builder /opt/hf-cache /opt/hf-cache
 
 RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
     ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
+
+COPY codes /app/
+
+ENTRYPOINT ["python", "/app/risk_detection.py"]
