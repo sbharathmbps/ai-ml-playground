@@ -40,13 +40,20 @@ If field is missing return null.
 
 Schema:
 {
-  "name": "",
-  "years_of_experience": "",
-  "current_role": "",
-  "primary_skills": [],
-  "education_level": "",
-  "location": "",
-  "certifications": []
+    "Total_Experience": "",
+    "Department": "",
+    "Role": "",
+    "Industry": "",
+    "Organization": "",
+    "Designation": "",
+    "Education": "",
+    "Graduation_Specialization": "",
+    "University_Grad": "",
+    "Passing_Year_Of_Graduation": "",
+    "PG_Specialization": "",
+    "University_PG": "",
+    "Passing_Year_Of_PG": "",
+    "Curent_Location": ""
 }
 """
 

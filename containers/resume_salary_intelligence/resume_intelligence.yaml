@@ -1,0 +1,126 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+    generateName: ml-workflow-
+spec:
+    # imagePullSecrets:
+    # - name: artifact-registery-secret
+    serviceAccountName: argo-workflow
+    entrypoint: main-dag
+    arguments:
+      parameters:
+      - name: folder_name
+      - name: field-extraction
+        value: "true"
+      - name: recommendation-engine
+        value: "true"
+      - name: salary-prediction
+        value: "true"
+
+    volumes:
+        - name: input-data
+          persistentVolumeClaim:
+            claimName: image-input-pvc
+
+    templates:
+          - name: main-dag
+            dag:
+                tasks:
+                  - name: field-extraction
+                    template: field-extraction-template
+                    when: "{{workflow.parameters.field-extraction}} == true"
+                    arguments:
+                        parameters:
+                        - name: src
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/"
+                        - name: dest
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/output/"
+                        - name: config
+                          value: "/mnt/data/ml-platform/containers/resume_salary_intelligence/resume_intelligence.json"
+
+                  - name: recommendation-engine
+                    template: recommendation-engine-template
+                    when: "{{workflow.parameters.recommendation-engine}} == true"
+                    arguments:
+                        parameters:
+                        - name: src
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/"
+                        - name: dest
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/output/"
+                        - name: config
+                          value: "/mnt/data/ml-platform/containers/resume_salary_intelligence/resume_intelligence.json"
+
+                  - name: salary-prediction
+                    template: salary-prediction-template
+                    when: "{{workflow.parameters.salary-prediction}} == true"
+                    arguments:
+                        parameters:
+                        - name: src
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/"
+                        - name: dest
+                          value: "/mnt/data/inputs/{{workflow.parameters.folder_name}}/output/"
+                        - name: config
+                          value: "/mnt/data/ml-platform/containers/resume_salary_intelligence/resume_intelligence.json"
+
+
+          - name: field-extraction-template
+            inputs:
+                parameters:
+                    - name: src
+                    - name: dest
+                    - name: config
+
+            container:
+                image: field-extraction-env:python-3.10-slim
+                # imagePullPolicy: Always
+                command: ["python", "/app/field_extraction.py"]
+                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                volumeMounts:
+                    - name: input-data
+                      mountPath: /mnt/data
+
+                envFrom:
+                    - secretRef:
+                        name: db-ml-platform
+
+
+          - name: recommendation-engine-template
+            inputs:
+                parameters:
+                    - name: src
+                    - name: dest
+                    - name: config
+
+            container:
+                image: recommendation-engine-env:python-3.12
+                # imagePullPolicy: Always
+                command: ["python", "/app/recommendation_engine.py"]
+                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                volumeMounts:
+                    - name: input-data
+                      mountPath: /mnt/data
+
+                envFrom:
+                    - secretRef:
+                        name: db-ml-platform
+
+
+          - name: salary-prediction-template
+            inputs:
+                parameters:
+                    - name: src
+                    - name: dest
+                    - name: config
+
+            container:
+                image: salary-prediction-env:python-3.12
+                # imagePullPolicy: Always
+                command: ["python", "/app/salary_prediction.py"]
+                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                volumeMounts:
+                    - name: input-data
+                      mountPath: /mnt/data
+
+                envFrom:
+                    - secretRef:
+                        name: db-ml-platform

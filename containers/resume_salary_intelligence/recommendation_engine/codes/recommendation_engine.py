@@ -70,6 +70,7 @@ def rank_jobs(resume_text: str, jobs: list[tuple[str, str]], top_k: int = 6):
         ranked.append(
             {
                 "job_id": job_ids[idx],
+                "description": job_descriptions[idx],
                 "score": float(scores[idx]),
             }
         )
@@ -78,8 +79,15 @@ def rank_jobs(resume_text: str, jobs: list[tuple[str, str]], top_k: int = 6):
 
 
 def build_recommended_jobs_payload(ranked_jobs: list[dict]) -> dict:
-    # Required output shape: {"1": "job_id", "2": "job_id", ...}
-    return {str(i + 1): item["job_id"] for i, item in enumerate(ranked_jobs)}
+    # Keep rank-keyed output, but include both job_id and description for apply flow.
+    return {
+        str(i + 1): {
+            "job_id": item["job_id"],
+            "description": item["description"],
+            "score": item["score"],
+        }
+        for i, item in enumerate(ranked_jobs)
+    }
 
 
 # def write_output(dest_dir: str, output: dict) -> None:

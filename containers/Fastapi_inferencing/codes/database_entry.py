@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from urllib.parse import quote_plus
 import logging
+from uuid import UUID as uuid_UUID
 
  
 Base = declarative_base()
@@ -67,7 +68,7 @@ class ApplicationStatus(Base):
     job_id = Column(UUID(as_uuid=True),ForeignKey("job_descriptions.job_id", ondelete="CASCADE"))
     resume_id = Column(UUID(as_uuid=True),ForeignKey("resume_intelligence.resume_id", ondelete="CASCADE"))
     market_ctc = Column(Float)
-    status = Column(Text,CheckConstraint("status IN ('selected','rejected')"))
+    status = Column(Text,CheckConstraint("status IN ('applied','selected','rejected')"))
     created_at = Column(DateTime,server_default=func.now())
 
 
@@ -93,6 +94,7 @@ def create_table_uvision(engineUvision):
     # Create database table if not exists
     Base.metadata.create_all(bind=engineUvision)
 
+#================================ Risk warning system ==========================================
 
 def insert_uploaded_image(SessionLocal, image_id, image_path):
 
@@ -114,25 +116,6 @@ def insert_uploaded_image(SessionLocal, image_id, image_path):
 
     finally:
         session.close()
-
-
-# def get_image_path(SessionLocal, image_id):
-
-#     session = SessionLocal()
-
-#     try:
-
-#         record = session.execute(
-#             select(RiskDetection).where(RiskDetection.image_id == image_id)
-#         ).scalar_one_or_none()
-
-#         if record is None:
-#             raise ValueError("Image not found")
-
-#         return record.image_path
-
-#     finally:
-#         session.close()
 
 
 def update_risk_detection(SessionLocal, image_id, result):
@@ -226,6 +209,298 @@ def add_sentenced_detection(SessionLocal, folder_name, final_output):
     finally:
         session.close()
 
+#================================ Resume salary intelligence ==========================================
+
+def insert_uploaded_resume(SessionLocal, resume_id, resume_path):
+
+    session = SessionLocal()
+
+    try:
+
+        new_record = ResumeIntelligence(
+            resume_id=resume_id,
+            resume_path=resume_path
+        )
+
+        session.add(new_record)
+        session.commit()
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def get_resume_fields(SessionLocal, resume_id):
+
+    session = SessionLocal()
+
+    try:
+        resume_uuid = uuid_UUID(str(resume_id))
+        stmt = select(
+            ResumeIntelligence.extracted_field,
+            ResumeIntelligence.user_field
+        ).where(ResumeIntelligence.resume_id == resume_uuid)
+        result = session.execute(stmt).first()
+
+        if result is None:
+            return None
+
+        extracted_field = result[0] or {}
+        user_field = result[1] or {}
+
+        # Show user-updated values first, fallback to extracted values.
+        prefilled_fields = extracted_field.copy()
+        prefilled_fields.update(user_field)
+
+        return {
+            "resume_id": str(resume_uuid),
+            "extracted_field": extracted_field,
+            "user_field": user_field,
+            "prefilled_field": prefilled_fields
+        }
+
+    except SQLAlchemyError as e:
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def update_user_fields(SessionLocal, resume_id, user_field):
+
+    session = SessionLocal()
+
+    try:
+        resume_uuid = uuid_UUID(str(resume_id))
+        record = session.get(ResumeIntelligence, resume_uuid)
+
+        if not record:
+            return False
+
+        record.user_field = user_field
+        session.commit()
+        return True
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def get_recommended_jobs(SessionLocal, resume_id):
+
+    session = SessionLocal()
+
+    try:
+        resume_uuid = uuid_UUID(str(resume_id))
+        stmt = select(ResumeIntelligence.recommended_jobs).where(
+            ResumeIntelligence.resume_id == resume_uuid
+        )
+        result = session.execute(stmt).scalar_one_or_none()
+
+        if result is None:
+            return None
+
+        recommended_jobs_mapped = []
+
+        if isinstance(result, dict):
+            for rank, value in result.items():
+                job_id = None
+                description = None
+                score = None
+
+                if isinstance(value, dict):
+                    job_id = value.get("job_id")
+                    description = value.get("description")
+                    score = value.get("score")
+                elif isinstance(value, str):
+                    try:
+                        uuid_UUID(value)
+                        job_id = value
+                    except ValueError:
+                        description = value
+
+                recommended_jobs_mapped.append(
+                    {
+                        "rank": rank,
+                        "job_id": job_id,
+                        "description": description,
+                        "score": score
+                    }
+                )
+
+        return {
+            "resume_id": str(resume_uuid),
+            "recommended_jobs": result or [],
+            "recommended_jobs_mapped": recommended_jobs_mapped
+        }
+
+    except SQLAlchemyError as e:
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def apply_for_job(SessionLocal, resume_id, job_id):
+
+    session = SessionLocal()
+
+    try:
+        resume_uuid = uuid_UUID(str(resume_id))
+        job_uuid = uuid_UUID(str(job_id))
+
+        resume_record = session.get(ResumeIntelligence, resume_uuid)
+        if not resume_record:
+            return {"success": False, "reason": "resume_not_found"}
+
+        job_record = session.get(JobDescriptions, job_uuid)
+        if not job_record:
+            return {"success": False, "reason": "job_not_found"}
+
+        application_record = ApplicationStatus(
+            resume_id=resume_uuid,
+            job_id=job_uuid,
+            status="applied"
+        )
+
+        session.add(application_record)
+        session.commit()
+
+        return {
+            "success": True,
+            "application_id": str(application_record.application_id)
+        }
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def get_hr_applications(SessionLocal, status=None):
+
+    session = SessionLocal()
+
+    try:
+        stmt = select(
+            ApplicationStatus.application_id,
+            ApplicationStatus.resume_id,
+            ApplicationStatus.job_id,
+            ApplicationStatus.market_ctc,
+            ApplicationStatus.status,
+            ApplicationStatus.created_at,
+            ResumeIntelligence.resume_path,
+            ResumeIntelligence.user_field,
+            JobDescriptions.description
+        ).join(
+            ResumeIntelligence,
+            ApplicationStatus.resume_id == ResumeIntelligence.resume_id
+        ).join(
+            JobDescriptions,
+            ApplicationStatus.job_id == JobDescriptions.job_id
+        )
+
+        if status is not None:
+            stmt = stmt.where(ApplicationStatus.status == status)
+
+        rows = session.execute(stmt).all()
+
+        result = []
+        for row in rows:
+            result.append(
+                {
+                    "application_id": str(row[0]),
+                    "resume_id": str(row[1]),
+                    "job_id": str(row[2]),
+                    "market_ctc": row[3],
+                    "status": row[4],
+                    "created_at": row[5].isoformat() if row[5] else None,
+                    "resume_path": row[6],
+                    "user_field": row[7] or {},
+                    "job_description": row[8]
+                }
+            )
+
+        return result
+
+    except SQLAlchemyError as e:
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def update_application_status(SessionLocal, application_id, status):
+
+    session = SessionLocal()
+
+    try:
+        application_uuid = uuid_UUID(str(application_id))
+        record = session.get(ApplicationStatus, application_uuid)
+
+        if not record:
+            return False
+
+        record.status = status
+        session.commit()
+        return True
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+
+def find_existing_market_ctc(SessionLocal, resume_id):
+
+    session = SessionLocal()
+
+    try:
+        resume_uuid = uuid_UUID(str(resume_id))
+
+        stmt = select(ApplicationStatus.market_ctc).where(
+            ApplicationStatus.resume_id == resume_uuid,
+            ApplicationStatus.market_ctc.is_not(None)
+        )
+        return session.execute(stmt).scalar_one_or_none()
+
+    finally:
+        session.close()
+
+
+def update_application_market_ctc(SessionLocal, application_id, market_ctc):
+
+    session = SessionLocal()
+
+    try:
+        application_uuid = uuid_UUID(str(application_id))
+        record = session.get(ApplicationStatus, application_uuid)
+
+        if not record:
+            return False
+
+        record.market_ctc = float(market_ctc)
+        session.commit()
+        return True
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
+        
 
 if __name__ == "__main__":
 
