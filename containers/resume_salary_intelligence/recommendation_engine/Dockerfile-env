@@ -48,16 +48,16 @@ COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --upgrade pip && \
     pip install -r /app/requirements.txt
 
-RUN pip install --upgrade torch==2.4.1 torchvision==0.19.1 transformers==4.57.1 sentence-transformers==2.7.0
+# RUN pip install --upgrade torch==2.4.1 torchvision==0.19.1 transformers==4.57.1 sentence-transformers==2.7.0
 
 RUN python - <<'PY'
 from huggingface_hub import snapshot_download
 
 model_id = "perplexity-ai/pplx-embed-v1-0.6B"
-snapshot_download(repo_id=model_id)
+model_revision = "fc544480a6be6395bcfe59d4dcf10c0a4e65b236"
+snapshot_download(repo_id=model_id, revision=model_revision)
 print("Recommendation model cached successfully")
 PY
-
 
 FROM ubuntu:22.04
 
@@ -84,6 +84,7 @@ COPY --from=builder /opt/hf-cache /opt/hf-cache
 
 RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
     ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
+
 
 COPY codes /app/
 

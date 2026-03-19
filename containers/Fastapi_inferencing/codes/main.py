@@ -202,7 +202,7 @@ async def save_resume_fields(resume_id: str, data: UserResumeFieldRequest):
 
 
 @app.post("/recommendation_engine/")
-async def risk_warning_system(data: ResumeIntelligenceRequest):
+async def recommendation_engine(data: ResumeIntelligenceRequest):
 
     folder_name = data.resume_id
     job_name = folder_name + str(int(time.time()))

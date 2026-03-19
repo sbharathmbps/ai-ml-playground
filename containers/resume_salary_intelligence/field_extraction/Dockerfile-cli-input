@@ -1,6 +1,0 @@
-FROM field-extraction-env:python-3.10-slim
-WORKDIR /app
-
-COPY codes /app/
-
-ENTRYPOINT ["python", "/app/field_extraction.py"]

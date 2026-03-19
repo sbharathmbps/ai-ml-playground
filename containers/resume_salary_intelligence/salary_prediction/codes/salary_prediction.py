@@ -197,7 +197,16 @@ def main() -> None:
     resume_id = args.folder_name
 
     SessionLocal, engine = get_local_session()
-    user_field = get_resume_user_field(SessionLocal, resume_id)
+    user_field_raw = get_resume_user_field(SessionLocal, resume_id)
+
+    unwanted_field = {
+    "Applicant_ID": None,
+    "PHD_Specialization": None,
+    "University_PHD": None,
+    "Passing_Year_Of_PHD": None
+}
+    user_field = user_field_raw | unwanted_field
+    
     person_payload = build_person_payload(user_field)
 
     model = joblib.load(MODEL_PATH)
@@ -224,3 +233,66 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# Extra_dummy_field = {
+#     "Applicant_ID": None,
+#     "PHD_Specialization": None,
+#     "University_PHD": None,
+#     "Passing_Year_Of_PHD": None
+# }
+
+# User_filed:
+# PERSON_FIELD_ORDER = [
+    # "Total_Experience",
+    # "Total_Experience_in_field_applied",
+    # "Department",
+    # "Role",
+    # "Industry",
+    # "Organization",
+    # "Designation",
+    # "Education",
+    # "Graduation_Specialization",
+    # "University_Grad",
+    # "Passing_Year_Of_Graduation",
+    # "PG_Specialization",
+    # "University_PG",
+    # "Passing_Year_Of_PG",
+    # "Curent_Location",
+    # "Preferred_location",
+    # "Current_CTC",
+    # "Inhand_Offer",
+    # "Last_Appraisal_Rating",
+    # "No_Of_Companies_worked",
+    # "Number_of_Publications",
+    # "Certifications",
+    # "International_degree_any",
+# ]
+
+
+# {
+#   "user_field": {
+#     "Role": "AI/ML Platform Engineer / MLOps Engineer",
+#     "Industry": "Technology",
+#     "Education": "PG",
+#     "Department": "Engineering",
+#     "Designation": "AI Platform Project Lead",
+#     "Organization": "TCS",
+#     "University_PG": "Great Lakes Executive Learning & The University of Texas at Austin",
+#     "Curent_Location": "Ahmedabad",
+#     "University_Grad": "Chennai",
+#     "Total_Experience": "2",
+#     "PG_Specialization": "Data Science & Business Analytics",
+#     "Passing_Year_Of_PG": "2024",
+#     "Graduation_Specialization": "Electrical and electronics",
+#     "Passing_Year_Of_Graduation": "2023"
+#     "Total_Experience_in_field_applied": "2",
+#     "Preferred_location": ""Bengaluru,
+#     "Current_CTC": "400000",
+#     "Inhand_Offer": "N",
+#     "Last_Appraisal_Rating": "A",
+#     "No_Of_Companies_worked": "1",
+#     "Number_of_Publications": "0",
+#     "Certifications": "2",
+#     "International_degree_any": "0",
+# }

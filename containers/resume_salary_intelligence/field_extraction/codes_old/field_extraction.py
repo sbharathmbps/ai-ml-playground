@@ -1,5 +1,5 @@
 import os
-HF_BASE = "/mnt/disks/conda-envs/Dockerize-Platform/Volumes/Image-input/VLM_input/huggingface_cache"
+HF_BASE = "/mnt/data/huggingface"
 
 os.environ["HF_HOME"] = HF_BASE
 os.environ["HF_HUB_CACHE"] = f"{HF_BASE}/hub"

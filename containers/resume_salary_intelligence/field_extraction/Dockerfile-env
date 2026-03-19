@@ -88,6 +88,9 @@ COPY --from=builder /opt/hf-cache /opt/hf-cache
 RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
     ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
 
+RUN pip install "accelerate==1.1.1"
+RUN pip install pypdf==5.1.0
+
 COPY codes /app/
 
 ENTRYPOINT ["python", "/app/field_extraction.py"]

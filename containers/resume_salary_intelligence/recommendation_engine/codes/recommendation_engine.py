@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
+from huggingface_hub import snapshot_download
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,8 +20,15 @@ from database_entry import (
 logging.basicConfig(level=logging.INFO)
 
 # Keep core model usage unchanged
+MODEL_ID = "perplexity-ai/pplx-embed-v1-0.6B"
+MODEL_REVISION = "fc544480a6be6395bcfe59d4dcf10c0a4e65b236"
+MODEL_LOCAL_PATH = snapshot_download(
+    repo_id=MODEL_ID,
+    revision=MODEL_REVISION,
+    local_files_only=True,
+)
 model = SentenceTransformer(
-    "perplexity-ai/pplx-embed-v1-0.6B",
+    MODEL_LOCAL_PATH,
     trust_remote_code=True,
 )
 

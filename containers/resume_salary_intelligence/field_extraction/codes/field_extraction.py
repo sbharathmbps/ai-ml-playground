@@ -17,17 +17,16 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 logging.basicConfig(level=logging.INFO)
 
 MODEL_ID = "LiquidAI/LFM2.5-1.2B-Instruct"
-device = "cuda" if torch.cuda.is_available() else "cpu"
-torch_dtype = torch.bfloat16 if device == "cuda" else torch.float32
-
-logging.info("Loading LFM model...")
+MAX_INPUT_CHARS = 30000
+ 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+ 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
     device_map="auto",
-    torch_dtype=torch_dtype,
+    torch_dtype=torch.bfloat16
 )
-model.eval()
+
 logging.info("LFM model loaded")
 
 SYSTEM_PROMPT = """
@@ -67,9 +66,39 @@ def read_resume_text(src_dir: str) -> str:
 
     file_path = files[0]
 
+    if file_path.suffix.lower() == ".pdf":
+        try:
+            from pypdf import PdfReader
+        except ImportError as e:
+            raise ImportError(
+                "PDF input detected but 'pypdf' is not installed. Install pypdf in the field_extraction image."
+            ) from e
+
+        reader = PdfReader(str(file_path))
+        page_text = [page.extract_text() or "" for page in reader.pages]
+        text = "\n".join(page_text).strip()
+        if not text:
+            raise ValueError(f"No extractable text found in PDF: {file_path}")
+        if len(text) > MAX_INPUT_CHARS:
+            logging.warning(
+                "Input text too long (%s chars). Truncating to %s chars to avoid OOM.",
+                len(text),
+                MAX_INPUT_CHARS,
+            )
+            return text[:MAX_INPUT_CHARS]
+        return text
+
     for encoding in ("utf-8", "latin-1"):
         try:
-            return file_path.read_text(encoding=encoding)
+            text = file_path.read_text(encoding=encoding)
+            if len(text) > MAX_INPUT_CHARS:
+                logging.warning(
+                    "Input text too long (%s chars). Truncating to %s chars to avoid OOM.",
+                    len(text),
+                    MAX_INPUT_CHARS,
+                )
+                return text[:MAX_INPUT_CHARS]
+            return text
         except UnicodeDecodeError:
             continue
 

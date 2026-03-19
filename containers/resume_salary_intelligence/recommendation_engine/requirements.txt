@@ -1,10 +1,10 @@
 # Pinned for reproducible builds
-torch==2.3.1
-sentence-transformers==3.1.1
-transformers==4.49.0
-huggingface-hub==0.26.2
+sentence-transformers==5.0.0
+transformers==4.57.6
+huggingface-hub==0.36.2
 scikit-learn==1.5.2
 numpy==1.26.4
 pypdf==5.1.0
 SQLAlchemy==2.0.36
 psycopg2-binary==2.9.10
+torch==2.6.0
