@@ -1,0 +1,97 @@
+FROM ollama/ollama:latest AS ollama-builder
+
+# Start ollama, pull mistral, stop — model stored in /root/.ollama
+RUN ollama serve & \
+    OLLAMA_PID=$! && \
+    echo "Waiting for Ollama to start..." && \
+    sleep 10 && \
+    ollama pull mistral && \
+    echo "Mistral pulled successfully" && \
+    kill $OLLAMA_PID && \
+    wait $OLLAMA_PID 2>/dev/null || true
+
+
+# ================================================================
+# STAGE 2 — PYTHON BUILDER
+# Builds Python 3.12 + installs all pip dependencies
+# ================================================================
+
+FROM ubuntu:22.04 AS python-builder
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    curl \
+    ca-certificates \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
+    libsqlite3-dev \
+    libbz2-dev \
+    liblzma-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+
+RUN wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz && \
+    tar -xf Python-3.12.3.tgz && \
+    cd Python-3.12.3 && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && \
+    make altinstall && \
+    cd /opt && rm -rf Python-3.12.3 Python-3.12.3.tgz
+
+RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
+    ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
+
+COPY requirements.txt /tmp/requirements.txt
+
+RUN pip install --upgrade pip && \
+    pip install -r /tmp/requirements.txt
+
+
+# ================================================================
+# STAGE 3 — FINAL RUNTIME IMAGE  (ollama-chatbot:python-3.12)
+# ================================================================
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    OLLAMA_HOST=0.0.0.0 \
+    OLLAMA_MODELS=/root/.ollama/models \
+    OLLAMA_BASE_URL=http://localhost:11434 \
+    OLLAMA_MODEL=mistral \
+    LLM_TIMEOUT_SEC=300
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    libssl3 \
+    libffi8 \
+    libsqlite3-0 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Python 3.12
+COPY --from=python-builder /usr/local/lib/python3.12  /usr/local/lib/python3.12
+COPY --from=python-builder /usr/local/bin              /usr/local/bin
+
+RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
+    ln -sf /usr/local/bin/pip3.12    /usr/bin/pip
+
+COPY --from=ollama-builder /usr/local/bin/ollama  /usr/local/bin/ollama
+COPY --from=ollama-builder /root/.ollama          /root/.ollama
+
+WORKDIR /app
+
+EXPOSE 5000

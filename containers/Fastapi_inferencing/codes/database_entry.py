@@ -71,6 +71,12 @@ class ApplicationStatus(Base):
     status = Column(Text,CheckConstraint("status IN ('applied','selected','rejected')"))
     created_at = Column(DateTime,server_default=func.now())
 
+# class TrafficInspection(Base):
+#     __tablename__ = "traffic_inspection"
+#     video_id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
+#     video_path = Column(String, nullable=False)
+#     created_at = Column(DateTime,server_default=func.now())
+
 
 def get_local_session():
     DB_USER = os.getenv('DB_USERNAME')
@@ -500,6 +506,27 @@ def update_application_market_ctc(SessionLocal, application_id, market_ctc):
     finally:
         session.close()
 
+
+# def insert_uploaded_video(SessionLocal, video_id, video_path):
+
+#     session = SessionLocal()
+
+#     try:
+
+#         new_record = TrafficInspection(
+#             video_id=video_id,
+#             video_path=video_path
+#         )
+
+#         session.add(new_record)
+#         session.commit()
+
+#     except SQLAlchemyError as e:
+#         session.rollback()
+#         raise RuntimeError(f"Database error: {str(e)}") from e
+
+#     finally:
+#         session.close()
         
 
 if __name__ == "__main__":
@@ -515,3 +542,5 @@ if __name__ == "__main__":
     SessionLocalUvision, engineUvision = get_local_session_uvision()
     id1 = add_detection_data(SessionLocalUvision, class_name="pole", x_min=23, y_min=41, x_max=57, y_max=64, score=99)
     # id1 = add_damage_detection_data(SessionLocal, good_portion_percentage=24, severe_damage_percentage=24, moderate_damage_percentage=24, low_damage_percentage=24, damaged_or_not="yes")
+
+

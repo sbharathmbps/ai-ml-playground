@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatbot-env-configmap
+  labels:
+    app: chatbot-app
+  namespace: app
+data:
+  OLLAMA_BASE_URL : "http://localhost:11434"
+  OLLAMA_MODEL : "mistral"
+  LLM_TEMPERATURE : "0.1"
+  LLM_CTX_WINDOW : "4096"
+  LLM_TIMEOUT_SEC : "300"
+---

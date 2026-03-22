@@ -1,0 +1,37 @@
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: chatbot-pv
+  namespace: app
+spec:
+  capacity:
+    storage: 100Gi
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data/ml-platform/containers/shopping_chatbot   # Host directory to mount
+    type: Directory
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chatbot-pvc
+  namespace: app
+  labels:
+    app: chatbot-app
+spec:
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 100Gi
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  volumeName: chatbot-pv
+---

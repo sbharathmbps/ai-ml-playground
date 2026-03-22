@@ -11,6 +11,7 @@ from database_entry import (
     get_local_session,
     insert_uploaded_image,
     insert_uploaded_resume,
+    insert_uploaded_video,
     get_resume_fields,
     update_user_fields,
     get_recommended_jobs,
@@ -362,3 +363,68 @@ async def salary_prediction(data: SalaryPredictionRequest):
     )
 
     return JSONResponse(content=inferenceApi_response(status=status, Job_Name=job_name).model_dump(),status_code=status_code)
+
+
+#================================ Traffic Inspection System ==========================================
+
+
+# @app.post("/upload_video/")
+# async def upload_video(file: UploadFile = File(...)):
+
+#     if not file.filename.lower().endswith(".jpg"):
+#         raise HTTPException(status_code=400, detail="Only videos are allowed")
+
+
+#     video_id = str(uuid.uuid4())
+
+#     os.makedirs(BASE_IMAGE_PATH, exist_ok=True)
+
+#     video_folder = os.path.join(BASE_IMAGE_PATH, video_id)
+#     os.makedirs(video_folder, exist_ok=True)
+
+#     video_path = os.path.join(video_folder, file.filename)
+
+#     with open(video_path, "wb") as buffer:
+#         buffer.write(await file.read())
+
+#     insert_uploaded_video(SessionLocal, video_id, video_path)
+
+#     return {
+#         "video_id": video_id,
+#         "video_path": video_path
+#     }
+
+
+# class TrafficInspectionRequest(BaseModel):
+#     video_id: str
+
+# class inferenceApi_response(BaseModel):
+#     status: str
+#     Job_Name: str
+
+# @app.post("/traffic_inspection_system/")
+# async def traffic_inspection_system(data: RiskPipelineRequest):
+
+#     folder_name = data.video_id
+#     job_name = folder_name + str(int(time.time()))
+
+#     data_dict = data.model_dump()
+
+#     assets = ["all"]
+
+#     yaml_file_path = os.path.join(ARGO_WORKFLOW_YAML_PATH,"traffic_inspection_system/traffic_inspection.yaml")
+#     dependency_chart_path = os.path.join(ARGO_WORKFLOW_YAML_PATH,"traffic_inspection_system/dependency_chart.json")
+
+#     status_code, status, job_name = run_argo_workflow(
+#         yaml_file_path=yaml_file_path,
+#         url=ARGO_WORKFLOW_API_URL,
+#         assets=assets,
+#         dependency_chart_path=dependency_chart_path,
+#         folder_name=folder_name,
+#         data=data_dict,
+#         namespace="argo",
+#         auth_token_provider=token_provider
+#     )
+
+#     return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name).model_dump(),status_code=status_code)
+

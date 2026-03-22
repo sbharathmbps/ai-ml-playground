@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-app-deployment
+  labels:
+    app: chatbot-app
+  namespace: app
+spec:
+  selector:
+    matchLabels:
+      app: chatbot-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: chatbot-app
+    spec:
+      # serviceAccountName: fastapi-client
+      # imagePullSecrets:
+      # - name: artifact-registery-secret
+      containers:
+      - name: chatbot-app
+        image: ollama-chatbot:python-3.12
+        command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
+        imagePullPolicy: IfNotPresent
+            # CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        # - mountPath: "/mnt"
+        #   name: chatbot-model-pvc-volume
+        - mountPath: "/app"
+          name: chatbot-pvc-volume
+        - mountPath: "/mnt/data"
+          name: image-input-pvc-ws-volume
+
+
+        envFrom:
+        - secretRef:
+            name: db-ml-platform
+        - configMapRef:
+            name: chatbot-env-configmap
+              
+      volumes:
+      # - name: chatbot-model-pvc-volume
+      #   persistentVolumeClaim:
+      #     claimName: chatbot-model-pvc # Reference to the PVC
+      - name: chatbot-pvc-volume
+        persistentVolumeClaim:
+          claimName: chatbot-pvc # Reference to the PVC
+      - name: image-input-pvc-ws-volume
+        persistentVolumeClaim:
+          claimName: image-input-pvc
+
+
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-app-service
+  labels:
+    app: chatbot-app
+  namespace: app
+  
+spec:
+  selector:
+    app: chatbot-app
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 5000
+  type: ClusterIP

@@ -61,8 +61,8 @@
 
 #=====================================================================================================================================================================================================================
 
-cd /mnt/data/ml-platform/containers/resume_salary_intelligence/recommendation_engine
-minikube image build -f Dockerfile-env . -t recommendation-engine-env:python-3.12 -p cpu-cluster
+# cd /mnt/data/ml-platform/containers/resume_salary_intelligence/recommendation_engine
+# minikube image build -f Dockerfile-env . -t recommendation-engine-env:python-3.12 -p cpu-cluster
 # # docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
 # # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 

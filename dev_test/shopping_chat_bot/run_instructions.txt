@@ -1,0 +1,28 @@
+Step 1 — Ollama (do this first, one time)
+bashcurl -fsSL https://ollama.com/install.sh | sh
+ollama pull mistral        # ~4.5 GB download
+ollama serve               # keep this running
+Step 2 — App
+bashunzip shopping_chatbot.zip && cd shopping_chatbot
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+Step 3 — Test it
+bash# Start a conversation
+curl -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "show me cricket bats under 1000"}'
+
+# Continue with the session_id from the response above
+curl -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Place order in the cart", "session_id": "6ba82abf-7ef2-440a-aaa6-402a1847dd73"}'
+Full interactive docs at http://localhost:8000/docs once running.
+What's inside each package:
+
+database/ — models with field descriptions, SQLite connection, 29 seeded sports products across 6 categories
+llm/ — Ollama client, prompt builder that auto-generates schema context from model metadata, response parser that extracts intent + SQL + action params
+chatbot/ — turn handler orchestrator, in-memory session state, ORM write executor (add/remove/order), JSON response formatter
+schemas/ — Pydantic request/response models
+main.py — all FastAPI routes including REST fallbacks for products, cart, and orders
