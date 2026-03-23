@@ -151,7 +151,7 @@ if __name__ == '__main__':
     update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=16, job_id=data["job_id"])
 
     final_output = analyze_image_for_risk(IMAGE_PATH)
-    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=88, job_id=data["job_id"])
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=57, job_id=data["job_id"])
 
     # if OUTPUT_JSON:
     #     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
@@ -161,4 +161,3 @@ if __name__ == '__main__':
     logging.info("\nFinal Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
     update_risk_detection(SessionLocal, folder_name, final_output)
-    update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])

@@ -185,14 +185,14 @@ if __name__ == '__main__':
 
     # ================= LOAD RISK FACTORS =================
     SessionLocal, engine = get_local_session()
-    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=24, job_id=data["job_id"])
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=63, job_id=data["job_id"])
 
     risk_factors = get_risk_factors(SessionLocal, folder_name)
 
     # ================= RUN PIPELINE =================
 
     final_output = run_florence_risk_pipeline(IMAGE_PATH,risk_factors,OUTPUT_PATH)
-    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=67, job_id=data["job_id"])
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=88, job_id=data["job_id"])
     add_sentenced_detection(SessionLocal, folder_name, final_output)
     logging.info("\n Final Structured Output:")
     logging.info(json.dumps(final_output, indent=2))

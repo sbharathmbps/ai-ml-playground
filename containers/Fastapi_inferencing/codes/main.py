@@ -11,7 +11,7 @@ from database_entry import (
     get_local_session,
     insert_uploaded_image,
     insert_uploaded_resume,
-    insert_uploaded_video,
+    get_risk_warning_outcomes,
     get_resume_fields,
     update_user_fields,
     get_recommended_jobs,
@@ -20,6 +20,7 @@ from database_entry import (
     update_application_status,
     find_existing_market_ctc,
     update_application_market_ctc,
+    get_application_market_ctc,
     update_progress
 )
 logging.basicConfig(level=logging.INFO)
@@ -43,7 +44,40 @@ class AuthTokenProvider:
         return token
 token_provider = AuthTokenProvider()
 
-#================================ Risk warning system ==========================================
+#================================ Module 1: Risk warning system ==========================================
+
+"""
+RISK WARNING SYSTEM: (end-to-end flow) 
+- user uploads an image (/upload_image/)
+- click on "check risks" should hit (/risk_warning_system/)
+- inside there are 2 sequential pods.
+- one is risk factor detection and second one is sentence based object detection
+- risk factor detection on completion will store risk_detected, risk_level, risk_factors(single list of all risks), explanation field in risk_detection table
+- sentence based object detection will loop using each risk_factors of the image and it will detect the objects mentioned in the sentence
+- it will store the detections in detections field in respective to risk_factor field in sentenced_object_detection table
+- In frontend, you need to show the image uploaded and each risk factors in side or below the image with a checkbox.
+- On selection of checkbox, it should draw all bbox and its labels of the respective sentence(risk factor).
+- Below I'm pasting output format of risk factor detection. Each parameters will be stored to its respective field in table.
+{
+  "risk_detected": true or false,
+  "risk_level": "low" | "medium" | "high",
+  "risk_factors": [],
+  "explanation": ""
+}
+- you can add interactive screen of your choice using these parameters like risk_level, risk_detected, explanation etc
+- Below I'm pasting the db inserting format for each sentence of an image(table: sentenced_object_detection).
+            risk_factor = item.get("sentence")
+
+            detections = {
+                "bboxes": item.get("bboxes", []),
+                "labels": item.get("labels", [])
+            }
+- progression of model should be periodically monitor through jobs_status table. 
+- when /risk_warning_system/ started, job_id, status and progress will be updated. Progress will be updated periodically inside the code. You can use it to show the current progression % in frontend.
+- Once status become COMPLETED and progress become 100% you can fetch the output through @app.get("/risk_warning_system/{image_id}")
+- for output payload structure, you can refer get_risk_warning_outcomes from database_entry.py
+- Use the related table fields to create interactive screen for it.
+""" 
 
 @app.post("/upload_image/")
 async def upload_image(file: UploadFile = File(...)):
@@ -80,6 +114,7 @@ class inferenceApi_response(BaseModel):
     Job_Name: str
     job_id: str
 
+
 @app.post("/risk_warning_system/")
 async def risk_warning_system(data: RiskPipelineRequest):
 
@@ -112,7 +147,69 @@ async def risk_warning_system(data: RiskPipelineRequest):
         update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=10, job_id=job_id)
         return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
 
-#================================ Resume salary intelligence ==========================================
+
+@app.get("/risk_warning_system/{image_id}")
+async def fetch_risk_warning_outcomes(image_id: str):
+
+    try:
+        result = get_risk_warning_outcomes(SessionLocal, image_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid image_id")
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return result
+
+#================================ Module 2: Resume salary intelligence ==========================================
+
+"""
+RESUME SALARY INTELLIGENCE: (end-to-end flow) 
+- this is big one compared to previous module.
+- you might need two separate screen/sidebar option for employee tab and hr tab.
+- lets start with employee tab.
+- after resume uploded, user should supposed to fill the 22 field listed below with an example:
+  "user_field": {
+    "Role": "AI/ML Platform Engineer / MLOps Engineer",
+    "Industry": "Technology",
+    "Education": "PG",
+    "Department": "Engineering",
+    "Designation": "AI Platform Project Lead",
+    "Organization": "TCS",
+    "University_PG": "Great Lakes Executive Learning & The University of Texas at Austin",
+    "Curent_Location": "Ahmedabad",
+    "University_Grad": "Chennai",
+    "Total_Experience": "2",
+    "PG_Specialization": "Data Science & Business Analytics",
+    "Passing_Year_Of_PG": "2024",
+    "Graduation_Specialization": "Electrical and electronics",
+    "Passing_Year_Of_Graduation": "2023"
+    "Total_Experience_in_field_applied": "2",
+    "Preferred_location": ""Bengaluru,
+    "Current_CTC": "400000",
+    "Inhand_Offer": "N",
+    "Last_Appraisal_Rating": "A",
+    "No_Of_Companies_worked": "1",
+    "Number_of_Publications": "0",
+    "Certifications": "2",
+    "International_degree_any": "0",
+}
+- And there should be an option to fill fields using ai which will call automated_field_extraction.
+- once the inferencing is done and status of the job become COMPLETED, trigger get("/resume_fields/{resume_id}") and fill the fields which we got from the db.
+- user should fill the remaining field and user can edit the field filled using ai.
+- once user filled all the fields and on submission trigger put("/resume_fields/{resume_id}") to get stored in db.
+- after submitting all details, user will get an option to find matching jobs which should hit post("/recommendation_engine/")
+- Once processing is done and updated in jobs_status table, get("/recommended_jobs/{resume_id}") will fetch outcomes from db.
+- check get_recommended_jobs in database_entry.py to understand the output payload format which you will receive.
+- list recommended jobs using the rank to user. On click, it should show the full details of job description and so on.
+- click on apply should hit post("/apply_job/") and it will be moved to applied job.
+- Now the hr side comes into picture. The applied job, user details, resume should be visible for hr now. @app.get("/hr_applications/")
+- hr will get an option to calculate the market value of the employee by hitting post("/salary_prediction/")
+- once it is completed show the market value stored in market_ctc field in application_status table. get("/salary_prediction/{application_id}")
+- hr can either select or reject the application.
+- for output payload structure, you can refer relative function from database_entry.py
+- Use the related table fields to create interactive screen for it.
+""" 
 
 @app.post("/upload_resume/")
 async def upload_resume(file: UploadFile = File(...)):
@@ -395,4 +492,15 @@ async def salary_prediction(data: SalaryPredictionRequest):
         return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
 
 
+@app.get("/salary_prediction/{application_id}")
+async def fetch_salary_prediction(application_id: str):
 
+    try:
+        result = get_application_market_ctc(SessionLocal, application_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application_id")
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    return result

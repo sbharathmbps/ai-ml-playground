@@ -239,6 +239,63 @@ def add_sentenced_detection(SessionLocal, folder_name, final_output):
     finally:
         session.close()
 
+
+def get_risk_warning_outcomes(SessionLocal, image_id):
+
+    session = SessionLocal()
+
+    try:
+        image_uuid = uuid_UUID(str(image_id))
+
+        risk_stmt = select(
+            RiskDetection.image_id,
+            RiskDetection.image_path,
+            RiskDetection.risk_detected,
+            RiskDetection.risk_level,
+            RiskDetection.risk_factors,
+            RiskDetection.explanation
+        ).where(RiskDetection.image_id == image_uuid)
+
+        risk_row = session.execute(risk_stmt).first()
+
+        if risk_row is None:
+            return None
+
+        detection_stmt = select(
+            SentencedObjectDetection.risk_factor,
+            SentencedObjectDetection.detections
+        ).where(SentencedObjectDetection.image_id == image_uuid)
+
+        detection_rows = session.execute(detection_stmt).all()
+
+        sentenced_detections = []
+        detections_by_risk_factor = {}
+
+        for row in detection_rows:
+            detection_item = {
+                "risk_factor": row[0],
+                "detections": row[1] or {"bboxes": [], "labels": []}
+            }
+            sentenced_detections.append(detection_item)
+            detections_by_risk_factor[row[0]] = detection_item["detections"]
+
+        return {
+            "image_id": str(risk_row[0]),
+            "image_path": risk_row[1],
+            "risk_detected": risk_row[2],
+            "risk_level": risk_row[3],
+            "risk_factors": risk_row[4] or [],
+            "explanation": risk_row[5],
+            "sentenced_detections": sentenced_detections,
+            "detections_by_risk_factor": detections_by_risk_factor
+        }
+
+    except SQLAlchemyError as e:
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
+
 #================================ Resume salary intelligence ==========================================
 
 def insert_uploaded_resume(SessionLocal, resume_id, resume_path):
@@ -531,26 +588,58 @@ def update_application_market_ctc(SessionLocal, application_id, market_ctc):
         session.close()
 
 
-def insert_uploaded_video(SessionLocal, video_id, video_path):
+def get_application_market_ctc(SessionLocal, application_id):
 
     session = SessionLocal()
 
     try:
+        application_uuid = uuid_UUID(str(application_id))
 
-        new_record = TrafficInspection(
-            video_id=video_id,
-            video_path=video_path
-        )
+        stmt = select(
+            ApplicationStatus.application_id,
+            ApplicationStatus.resume_id,
+            ApplicationStatus.job_id,
+            ApplicationStatus.market_ctc,
+            ApplicationStatus.status
+        ).where(ApplicationStatus.application_id == application_uuid)
 
-        session.add(new_record)
-        session.commit()
+        row = session.execute(stmt).first()
 
-    except SQLAlchemyError as e:
-        session.rollback()
-        raise RuntimeError(f"Database error: {str(e)}") from e
+        if row is None:
+            return None
+
+        return {
+            "application_id": str(row[0]),
+            "resume_id": str(row[1]),
+            "job_id": str(row[2]),
+            "market_ctc": row[3],
+            "status": row[4]
+        }
 
     finally:
         session.close()
+
+
+# def insert_uploaded_video(SessionLocal, video_id, video_path):
+
+#     session = SessionLocal()
+
+#     try:
+
+#         new_record = TrafficInspection(
+#             video_id=video_id,
+#             video_path=video_path
+#         )
+
+#         session.add(new_record)
+#         session.commit()
+
+#     except SQLAlchemyError as e:
+#         session.rollback()
+#         raise RuntimeError(f"Database error: {str(e)}") from e
+
+#     finally:
+#         session.close()
         
 
 if __name__ == "__main__":
@@ -566,5 +655,3 @@ if __name__ == "__main__":
     SessionLocalUvision, engineUvision = get_local_session_uvision()
     id1 = add_detection_data(SessionLocalUvision, class_name="pole", x_min=23, y_min=41, x_max=57, y_max=64, score=99)
     # id1 = add_damage_detection_data(SessionLocal, good_portion_percentage=24, severe_damage_percentage=24, moderate_damage_percentage=24, low_damage_percentage=24, damaged_or_not="yes")
-
-
