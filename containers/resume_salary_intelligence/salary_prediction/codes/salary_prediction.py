@@ -7,7 +7,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from database_entry import get_local_session, get_resume_user_field, update_market_ctc_by_resume
+from database_entry import get_local_session, get_resume_user_field, update_market_ctc_by_resume, update_progress
 
 
 MODEL_PATH = "/mnt/data/models/salary_prediction/salary_prediction_model.pkl"
@@ -192,11 +192,16 @@ def main() -> None:
     parser.add_argument("--config", help="Optional config file", default=None)
     parser.add_argument("--workflow_name", default="workflow")
     parser.add_argument("--folder_name", default="folder")
+    parser.add_argument("--data", default="data from the database")
+    
     args = parser.parse_args()
 
     resume_id = args.folder_name
+    data = json.loads(args.data)
 
     SessionLocal, engine = get_local_session()
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=33, job_id=data["job_id"])
+
     user_field_raw = get_resume_user_field(SessionLocal, resume_id)
 
     unwanted_field = {
@@ -220,6 +225,7 @@ def main() -> None:
     pred_expected_ctc = round(pred_expected_ctc, 2)
 
     update_market_ctc_by_resume(SessionLocal, resume_id, pred_expected_ctc)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=75, job_id=data["job_id"])
 
     result = {
         "input": person_payload,
@@ -227,8 +233,8 @@ def main() -> None:
         "resume_id": str(resume_id),
     }
 
-    # write_output(args.dest, result)
     print(json.dumps(result, indent=2))
+    update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])
 
 
 if __name__ == "__main__":

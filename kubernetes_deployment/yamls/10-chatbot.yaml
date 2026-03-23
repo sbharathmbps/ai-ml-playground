@@ -21,39 +21,105 @@ spec:
       containers:
       - name: chatbot-app
         image: ollama-chatbot:python-3.12
-        command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
         imagePullPolicy: IfNotPresent
-            # CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+
+        # Starts Ollama first, waits until ready, then starts FastAPI
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            export OLLAMA_MODELS="${OLLAMA_MODELS:-/mnt/data/ollama-models/chatbot}"
+            mkdir -p "${OLLAMA_MODELS}"
+
+            if [ ! -d "${OLLAMA_MODELS}/blobs" ] || [ ! -d "${OLLAMA_MODELS}/manifests" ]; then
+                echo "Seeding Ollama models into ${OLLAMA_MODELS}..."
+                cp -a /root/.ollama/models/. "${OLLAMA_MODELS}/"
+            fi
+
+            echo "Starting Ollama server..."
+            ollama serve &
+
+            echo "Waiting for Ollama to be ready..."
+            for i in $(seq 1 30); do
+                if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+                    echo "Ollama is ready."
+                    break
+                fi
+                echo "attempt $i/30 - waiting 3s..."
+                sleep 3
+            done
+
+            echo "Starting FastAPI on port 5000..."
+            exec uvicorn main:app --host 0.0.0.0 --port 5000 --log-level info --workers 1
+
         ports:
-        - containerPort: 5000
+        - containerPort: 5000     # FastAPI
+        - containerPort: 11434    # Ollama (internal use only)
+
         volumeMounts:
-        # - mountPath: "/mnt"
-        #   name: chatbot-model-pvc-volume
         - mountPath: "/app"
           name: chatbot-pvc-volume
         - mountPath: "/mnt/data"
           name: image-input-pvc-ws-volume
-
 
         envFrom:
         - secretRef:
             name: db-ml-platform
         - configMapRef:
             name: chatbot-env-configmap
-              
+
+        env:
+        - name: OLLAMA_NUM_PARALLEL
+          value: "1"
+
+        # Ollama is heavy — give it enough memory
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1"
+          limits:
+            memory: "12Gi"
+            cpu: "15"
+
+        # Don't send traffic until Ollama + FastAPI are both up
+        # Readiness probe — k8s won't send traffic until this passes
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15    # app startup is much faster than 2 minutes
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 20       # 20 x 15s = 5 min total wait before giving up
+ 
+        # Startup probe — prevents liveness from killing pod during slow boot
+        # Once this passes, liveness probe takes over
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 20       # 20 x 15s = 5 min max startup time
+ 
+        # Liveness probe — only restarts if pod is genuinely deadlocked
+        # Uses high failureThreshold so transient slowness doesn't cause restart
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 10       # 10 x 30s = 5 min of failures before restart
+
       volumes:
-      # - name: chatbot-model-pvc-volume
-      #   persistentVolumeClaim:
-      #     claimName: chatbot-model-pvc # Reference to the PVC
       - name: chatbot-pvc-volume
         persistentVolumeClaim:
-          claimName: chatbot-pvc # Reference to the PVC
+          claimName: chatbot-pvc
       - name: image-input-pvc-ws-volume
         persistentVolumeClaim:
           claimName: image-input-pvc
 
-
-          
 ---
 apiVersion: v1
 kind: Service
@@ -62,12 +128,11 @@ metadata:
   labels:
     app: chatbot-app
   namespace: app
-  
 spec:
   selector:
     app: chatbot-app
   ports:
-  - protocol: TCP
+  - protocol: TCPs
     port: 5000
     targetPort: 5000
   type: ClusterIP

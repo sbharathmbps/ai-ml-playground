@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from database_entry import get_local_session, update_resume_extracted_field
+from database_entry import get_local_session, update_resume_extracted_field, update_progress
 
 
 HF_BASE = os.getenv("HF_HOME", "/opt/hf-cache")
@@ -154,18 +154,29 @@ if __name__ == "__main__":
     parser.add_argument("--config", help="Optional config file", default=None)
     parser.add_argument("--workflow_name", default="workflow")
     parser.add_argument("--folder_name", default="folder")
+    parser.add_argument("--data", default="data from the database")
 
     args = parser.parse_args()
 
     src = args.src
     folder_name = args.folder_name
+    data = json.loads(args.data)   
+
+    SessionLocal, engine = get_local_session()
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=16, job_id=data["job_id"])
+
     resume_text = read_resume_text(src)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=25, job_id=data["job_id"])
+
     final_output = extract_features_with_llm(resume_text)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=88, job_id=data["job_id"])
 
     # write_output(args.dest, final_output)
 
     logging.info("Final Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
 
-    SessionLocal, engine = get_local_session()
     update_resume_extracted_field(SessionLocal, folder_name, final_output)
+    update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])
+
+    

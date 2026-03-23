@@ -12,7 +12,7 @@ import argparse
 import logging
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoProcessor, AutoModelForCausalLM
-from database_entry import get_local_session, get_risk_factors, add_sentenced_detection
+from database_entry import get_local_session, get_risk_factors, add_sentenced_detection, update_progress
 
 logging.basicConfig(level=logging.INFO)
 
@@ -169,12 +169,13 @@ if __name__ == '__main__':
 
     parser.add_argument("--workflow_name", default="workflow")
     parser.add_argument("--folder_name", default="folder")
+    parser.add_argument("--data", default="data from the database")
 
     args = parser.parse_args()
 
     src = args.src
     OUTPUT_PATH = args.dest
-
+    data = json.loads(args.data)
 
     workflow_name = args.workflow_name
     folder_name = args.folder_name
@@ -184,14 +185,19 @@ if __name__ == '__main__':
 
     # ================= LOAD RISK FACTORS =================
     SessionLocal, engine = get_local_session()
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=24, job_id=data["job_id"])
+
     risk_factors = get_risk_factors(SessionLocal, folder_name)
 
     # ================= RUN PIPELINE =================
 
     final_output = run_florence_risk_pipeline(IMAGE_PATH,risk_factors,OUTPUT_PATH)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=67, job_id=data["job_id"])
     add_sentenced_detection(SessionLocal, folder_name, final_output)
     logging.info("\n Final Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
+    update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])
+
 
 
 

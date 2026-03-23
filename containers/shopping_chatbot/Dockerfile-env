@@ -84,13 +84,17 @@ RUN apt-get update && apt-get install -y \
 
 # Python 3.12
 COPY --from=python-builder /usr/local/lib/python3.12  /usr/local/lib/python3.12
-COPY --from=python-builder /usr/local/bin              /usr/local/bin
+COPY --from=python-builder /usr/local/bin  /usr/local/bin
 
 RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python && \
-    ln -sf /usr/local/bin/pip3.12    /usr/bin/pip
+    ln -sf /usr/local/bin/pip3.12 /usr/bin/pip
 
-COPY --from=ollama-builder /usr/local/bin/ollama  /usr/local/bin/ollama
-COPY --from=ollama-builder /root/.ollama          /root/.ollama
+COPY --from=ollama-builder /bin/ollama  /usr/local/bin/ollama
+COPY --from=ollama-builder /usr/lib/ollama  /usr/lib/ollama
+COPY --from=ollama-builder /root/.ollama  /root/.ollama
+
+RUN mkdir -p /usr/local/lib/ollama && \
+    cp -a /usr/lib/ollama/. /usr/local/lib/ollama/
 
 WORKDIR /app
 

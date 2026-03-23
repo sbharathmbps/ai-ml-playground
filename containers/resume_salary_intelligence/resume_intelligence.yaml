@@ -10,6 +10,7 @@ spec:
     arguments:
       parameters:
       - name: folder_name
+      - name: data
       - name: field-extraction
         value: "true"
       - name: recommendation-engine
@@ -74,7 +75,7 @@ spec:
                 image: field-extraction-env:python-3.10-slim
                 # imagePullPolicy: Always
                 command: ["python", "/app/field_extraction.py"]
-                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data
@@ -95,7 +96,7 @@ spec:
                 image: recommendation-engine-env:python-3.12
                 # imagePullPolicy: Always
                 command: ["python", "/app/recommendation_engine.py"]
-                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data
@@ -116,7 +117,7 @@ spec:
                 image: salary-prediction-env:python-3.12
                 # imagePullPolicy: Always
                 command: ["python", "/app/salary_prediction.py"]
-                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                args: ["--src", "{{inputs.parameters.src}}", "--dest", "{{inputs.parameters.dest}}", "--config", "{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data

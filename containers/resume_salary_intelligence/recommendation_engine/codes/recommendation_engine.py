@@ -14,6 +14,7 @@ from database_entry import (
     get_local_session,
     get_job_descriptions,
     update_recommended_jobs,
+    update_progress
 )
 
 
@@ -111,16 +112,22 @@ if __name__ == "__main__":
     parser.add_argument("--config", help="Optional config file", default=None)
     parser.add_argument("--workflow_name", default="workflow")
     parser.add_argument("--folder_name", default="folder")
+    parser.add_argument("--data", default="data from the database")
 
     args = parser.parse_args()
 
     resume_text = read_resume_text(args.src)
+    data = json.loads(args.data)
 
     SessionLocal, engine = get_local_session()
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=15, job_id=data["job_id"])
+
     jobs = get_job_descriptions(SessionLocal)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=68, job_id=data["job_id"])
 
     ranked_jobs = rank_jobs(resume_text, jobs, top_k=6)
     recommended_jobs = build_recommended_jobs_payload(ranked_jobs)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=83, job_id=data["job_id"])
 
     final_output = {
         "recommended_jobs": recommended_jobs,
@@ -128,8 +135,8 @@ if __name__ == "__main__":
         "total_jobs": len(jobs),
     }
 
-    # write_output(args.dest, final_output)
     update_recommended_jobs(SessionLocal, args.folder_name, recommended_jobs)
 
     logging.info("Final Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
+    update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])

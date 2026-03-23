@@ -91,3 +91,10 @@
 # minikube image build -f Dockerfile-env . -t inference-engine-fastapi:python-3.11.13-slim -p cpu-cluster
 # docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
 # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
+
+##=====================================================================================================================================================================================================================
+
+# cd /mnt/data/ml-platform/containers/shopping_chatbot
+# minikube image build -f Dockerfile-env . -t ollama-chatbot:python-3.12 -p cpu-cluster
+# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
+# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            

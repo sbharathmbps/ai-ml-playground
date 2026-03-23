@@ -19,17 +19,17 @@ from database_entry import (
     get_hr_applications,
     update_application_status,
     find_existing_market_ctc,
-    update_application_market_ctc
+    update_application_market_ctc,
+    update_progress
 )
 logging.basicConfig(level=logging.INFO)
 
 
 app = FastAPI()
 
-BASE_IMAGE_PATH = "/mnt/data/inputs/"
-ARGO_WORKFLOW_YAML_PATH = "/mnt/data/ml-platform/containers"
-ARGO_WORKFLOW_API_URL = "http://argo-workflows-server.argo.svc.cluster.local:2746/api/v1/workflows/argo"
-# ARGO_WORKFLOW_API_URL = "http://localhost:2746/api/v1/workflows/argo"
+BASE_IMAGE_PATH = os.getenv("BASE_IMAGE_PATH")
+ARGO_WORKFLOW_YAML_PATH = os.getenv("ARGO_WORKFLOW_YAML_PATH")
+ARGO_WORKFLOW_API_URL = os.getenv("ARGO_WORKFLOW_API_URL")
 
 SessionLocal, engine = get_local_session()
 
@@ -78,15 +78,17 @@ class RiskPipelineRequest(BaseModel):
 class inferenceApi_response(BaseModel):
     status: str
     Job_Name: str
+    job_id: str
 
 @app.post("/risk_warning_system/")
 async def risk_warning_system(data: RiskPipelineRequest):
 
     folder_name = data.image_id
     job_name = folder_name + str(int(time.time()))
+    job_id = str(uuid.uuid4())
 
     data_dict = data.model_dump()
-
+    data_dict["job_id"] = job_id
     assets = ["all"]
 
     yaml_file_path = os.path.join(ARGO_WORKFLOW_YAML_PATH,"risk_warning_system/risk_warning_system.yaml")
@@ -103,8 +105,12 @@ async def risk_warning_system(data: RiskPipelineRequest):
         auth_token_provider=token_provider
     )
 
-    return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name).model_dump(),status_code=status_code)
-
+    if job_name == None:
+        update_progress(SessionLocal=SessionLocal, status="FAILED", progress=0, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
+    else:
+        update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=10, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
 
 #================================ Resume salary intelligence ==========================================
 
@@ -147,7 +153,10 @@ async def risk_warning_system(data: ResumeIntelligenceRequest):
     folder_name = data.resume_id
     job_name = folder_name + str(int(time.time()))
 
+    job_id = str(uuid.uuid4())
+
     data_dict = data.model_dump()
+    data_dict["job_id"] = job_id
 
     assets = ["field_extraction"]
 
@@ -165,8 +174,13 @@ async def risk_warning_system(data: ResumeIntelligenceRequest):
         auth_token_provider=token_provider
     )
 
-    return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name).model_dump(),status_code=status_code)
-
+    if job_name == None:
+        update_progress(SessionLocal=SessionLocal, status="FAILED", progress=0, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
+    else:
+        update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=10, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
+    
 
 class UserResumeFieldRequest(BaseModel):
     user_field: Dict[str, Any]
@@ -208,7 +222,10 @@ async def recommendation_engine(data: ResumeIntelligenceRequest):
     folder_name = data.resume_id
     job_name = folder_name + str(int(time.time()))
 
+    job_id = str(uuid.uuid4())
+
     data_dict = data.model_dump()
+    data_dict["job_id"] = job_id
 
     assets = ["recommendation_engine"]
 
@@ -226,8 +243,13 @@ async def recommendation_engine(data: ResumeIntelligenceRequest):
         auth_token_provider=token_provider
     )
 
-    return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name).model_dump(),status_code=status_code)
-
+    if job_name == None:
+        update_progress(SessionLocal=SessionLocal, status="FAILED", progress=0, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
+    else:
+        update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=10, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
+    
 
 @app.get("/recommended_jobs/{resume_id}")
 async def fetch_recommended_jobs(resume_id: str):
@@ -319,6 +341,7 @@ async def salary_prediction(data: SalaryPredictionRequest):
 
     folder_name = data.resume_id
     application_id = data.application_id
+    job_id = str(uuid.uuid4())
 
     try:
         existing_market_ctc = find_existing_market_ctc(SessionLocal, folder_name)
@@ -330,6 +353,7 @@ async def salary_prediction(data: SalaryPredictionRequest):
         if application_id is not None:
             try:
                 updated = update_application_market_ctc(SessionLocal, application_id, existing_market_ctc)
+                update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=job_id)
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid application_id")
             if not updated:
@@ -343,8 +367,9 @@ async def salary_prediction(data: SalaryPredictionRequest):
         }
 
     job_name = folder_name + str(int(time.time()))
-
-    data_dict = {"resume_id": folder_name}
+    data_dict = data.model_dump()
+    data_dict["job_id"] = job_id
+    data_dict["resume_id"] = folder_name
 
     assets = ["salary_prediction"]
 
@@ -362,69 +387,12 @@ async def salary_prediction(data: SalaryPredictionRequest):
         auth_token_provider=token_provider
     )
 
-    return JSONResponse(content=inferenceApi_response(status=status, Job_Name=job_name).model_dump(),status_code=status_code)
+    if job_name == None:
+        update_progress(SessionLocal=SessionLocal, status="FAILED", progress=0, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
+    else:
+        update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=10, job_id=job_id)
+        return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
 
 
-#================================ Traffic Inspection System ==========================================
-
-
-# @app.post("/upload_video/")
-# async def upload_video(file: UploadFile = File(...)):
-
-#     if not file.filename.lower().endswith(".jpg"):
-#         raise HTTPException(status_code=400, detail="Only videos are allowed")
-
-
-#     video_id = str(uuid.uuid4())
-
-#     os.makedirs(BASE_IMAGE_PATH, exist_ok=True)
-
-#     video_folder = os.path.join(BASE_IMAGE_PATH, video_id)
-#     os.makedirs(video_folder, exist_ok=True)
-
-#     video_path = os.path.join(video_folder, file.filename)
-
-#     with open(video_path, "wb") as buffer:
-#         buffer.write(await file.read())
-
-#     insert_uploaded_video(SessionLocal, video_id, video_path)
-
-#     return {
-#         "video_id": video_id,
-#         "video_path": video_path
-#     }
-
-
-# class TrafficInspectionRequest(BaseModel):
-#     video_id: str
-
-# class inferenceApi_response(BaseModel):
-#     status: str
-#     Job_Name: str
-
-# @app.post("/traffic_inspection_system/")
-# async def traffic_inspection_system(data: RiskPipelineRequest):
-
-#     folder_name = data.video_id
-#     job_name = folder_name + str(int(time.time()))
-
-#     data_dict = data.model_dump()
-
-#     assets = ["all"]
-
-#     yaml_file_path = os.path.join(ARGO_WORKFLOW_YAML_PATH,"traffic_inspection_system/traffic_inspection.yaml")
-#     dependency_chart_path = os.path.join(ARGO_WORKFLOW_YAML_PATH,"traffic_inspection_system/dependency_chart.json")
-
-#     status_code, status, job_name = run_argo_workflow(
-#         yaml_file_path=yaml_file_path,
-#         url=ARGO_WORKFLOW_API_URL,
-#         assets=assets,
-#         dependency_chart_path=dependency_chart_path,
-#         folder_name=folder_name,
-#         data=data_dict,
-#         namespace="argo",
-#         auth_token_provider=token_provider
-#     )
-
-#     return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name).model_dump(),status_code=status_code)
 

@@ -12,7 +12,7 @@ import argparse
 import logging
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText
-from database_entry import get_local_session, update_risk_detection
+from database_entry import get_local_session, update_risk_detection, update_progress
 
 
 logging.basicConfig(level=logging.INFO)
@@ -132,8 +132,11 @@ if __name__ == '__main__':
 
     parser.add_argument("--workflow_name", default="workflow")
     parser.add_argument("--folder_name", default="folder")
+    parser.add_argument("--data", default="data from the database")
+
 
     args = parser.parse_args()
+    data = json.loads(args.data)
 
     src = args.src
     OUTPUT_PATH = args.dest
@@ -144,8 +147,11 @@ if __name__ == '__main__':
     IMAGE_PATH = os.path.join(src, os.listdir(src)[0])
 
     # ================= RUN PIPELINE =================
+    SessionLocal, engine = get_local_session()
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=16, job_id=data["job_id"])
 
     final_output = analyze_image_for_risk(IMAGE_PATH)
+    update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=88, job_id=data["job_id"])
 
     # if OUTPUT_JSON:
     #     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
@@ -154,5 +160,5 @@ if __name__ == '__main__':
 
     logging.info("\nFinal Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
-    SessionLocal, engine = get_local_session()
     update_risk_detection(SessionLocal, folder_name, final_output)
+    update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])

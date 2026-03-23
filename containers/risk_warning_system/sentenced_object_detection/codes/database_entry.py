@@ -15,19 +15,15 @@ import logging
 Base = declarative_base()
  
 class JobStatus(Base):
-    __tablename__ = "photos_jobstatus"
-    id = Column(Integer , primary_key=True , autoincrement=True)
-    project = Column(String(255))
-    job_name = Column(String(255))
-    op_name = Column(String(255), default = '')
-    process_name = Column(String(255), default = '')
-    status = Column(String(255), default = '')
-    op_timestamp = Column(DateTime, nullable=True)
-    future_attr1 = Column(String(127), default = '')
-    future_attr2 = Column(String(127), default = '')
-    future_attr3 = Column(String(127), default = '')
-    future_attr4 = Column(String(127), default = '')
-    created_at = Column(DateTime, default=datetime.now(), nullable=True)
+    __tablename__ = "jobs_status"
+    job_id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
+    status = Column(String(20),nullable=False)
+    progress = Column(Integer,default=0)
+    updated_at = Column(DateTime(timezone=True),server_default=func.now(),onupdate=func.now())
+    __table_args__ = (
+    CheckConstraint("status IN ('RUNNING', 'COMPLETED', 'FAILED')",name="check_status"),
+    CheckConstraint("progress >= 0 AND progress <= 100",name="check_progress"),
+    )
 
 class RiskDetection(Base):
     __tablename__ = "risk_detection"
@@ -92,6 +88,33 @@ def create_table(engine):
 def create_table_uvision(engineUvision):
     # Create database table if not exists
     Base.metadata.create_all(bind=engineUvision)
+
+def update_progress(SessionLocal, status, progress, job_id):
+    session = SessionLocal()
+
+    try:
+        job = session.query(JobStatus).filter(JobStatus.job_id == job_id).first()
+
+        if job:
+            job.status = status
+            job.progress = progress
+        else:
+            job = JobStatus(
+                job_id=job_id,
+                status=status,
+                progress=progress
+            )
+            session.add(job)
+
+        session.commit()
+        session.refresh(job)
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Database error: {str(e)}") from e
+
+    finally:
+        session.close()
 
 
 def insert_uploaded_image(SessionLocal, image_id, image_path):

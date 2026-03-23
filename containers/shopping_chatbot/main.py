@@ -16,6 +16,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -71,14 +72,37 @@ app.add_middleware(
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 def health_check(db: Session = Depends(get_db)):
-    # DB check
+    """
+    Lightweight health check for k8s probes.
+    Only checks DB connectivity — does NOT call Ollama.
+    Ollama status is checked separately via /health/full to avoid
+    blocking the probe when the model is busy with inference.
+    """
     try:
         db.execute(__import__("sqlalchemy").text("SELECT 1"))
         db_status = "ok"
     except Exception as e:
         db_status = f"error: {e}"
 
-    # LLM check
+    return HealthResponse(
+        status    = "ok" if db_status == "ok" else "degraded",
+        db        = db_status,
+        llm       = "not_checked",
+        llm_model = llm_client.model,
+    )
+
+
+@app.get("/health/full", response_model=HealthResponse, tags=["System"])
+def health_check_full(db: Session = Depends(get_db)):
+    """
+    Full health check including Ollama — use manually, not for k8s probes.
+    """
+    try:
+        db.execute(__import__("sqlalchemy").text("SELECT 1"))
+        db_status = "ok"
+    except Exception as e:
+        db_status = f"error: {e}"
+
     llm_ok = llm_client.health_check()
 
     return HealthResponse(
@@ -100,7 +124,8 @@ async def chat(req: ChatRequest, db: Session = Depends(get_db)):
     Send a message and receive a structured JSON response.
     Pass `session_id` from a previous response to continue the conversation.
     """
-    response = handle_turn(
+    response = await run_in_threadpool(
+        handle_turn,
         user_message = req.message,
         session_id   = req.session_id,
         db           = db,

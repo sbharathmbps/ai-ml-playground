@@ -37,6 +37,14 @@ spec:
           name: argo-ui-token
           readOnly: true
 
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1"
+          limits:
+            memory: "24Gi"
+            cpu: "15"
+
         envFrom:
         - secretRef:
             name: db-ml-platform

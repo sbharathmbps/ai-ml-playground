@@ -10,6 +10,7 @@ spec:
     arguments:
       parameters:
       - name: folder_name
+      - name: data
       - name: risk-detection
         value: "true"
       - name: sentenced-object-detection
@@ -67,7 +68,7 @@ spec:
                 image: risk-detection-env:python-3.12
                 # imagePullPolicy: Always
                 command: ["python", "/app/risk_detection.py"]
-                args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data
@@ -92,7 +93,7 @@ spec:
                 image: sentenced-obj-det-env:python-3.10-slim
                 # imagePullPolicy: Always
                 command: ["python", "/app/sentence_to_bbox.py"]
-                args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}"]
+                args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data
