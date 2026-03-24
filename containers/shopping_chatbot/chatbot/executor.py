@@ -25,7 +25,7 @@ def execute_select(db: Session, sql: str) -> list[dict]:
     """
     clean = sql.strip()
     if not clean.upper().startswith("SELECT"):
-        raise ValueError(f"Only SELECT statements are allowed. Got: {clean[:60]}")
+        raise ValueError("Only SELECT statements are allowed.")
 
     try:
         result = db.execute(text(clean))
@@ -65,7 +65,7 @@ def add_to_cart(db: Session, session_id: str, product_id: int, qty: int = 1) -> 
     """
     product = db.query(Product).filter_by(id=product_id).first()
     if not product:
-        raise ValueError(f"Product id={product_id} not found")
+        raise ValueError("Product not found.")
     if product.stock_qty < qty:
         raise ValueError(f"Only {product.stock_qty} units in stock for '{product.name}'")
 
@@ -115,9 +115,9 @@ def remove_from_cart(db: Session, session_id: str, product_id: int) -> dict:
 
     item = db.query(CartItem).filter_by(cart_id=cart.id, product_id=product_id).first()
     if not item:
-        raise ValueError(f"Product id={product_id} not in cart")
+        raise ValueError("That product is not in your cart.")
 
-    product_name = item.product.name if item.product else str(product_id)
+    product_name = item.product.name if item.product else "Unknown product"
     db.delete(item)
     db.commit()
     logger.info(f"Removed product={product_id} from cart={cart.id}")
@@ -139,7 +139,7 @@ def update_cart_qty(db: Session, session_id: str, product_id: int, new_qty: int)
 
     item = db.query(CartItem).filter_by(cart_id=cart.id, product_id=product_id).first()
     if not item:
-        raise ValueError(f"Product id={product_id} not in cart")
+        raise ValueError("That product is not in your cart.")
 
     item.qty = new_qty
     db.commit()
@@ -200,9 +200,9 @@ def place_order(db: Session, session_id: str, cart_id: int) -> Order:
     """
     cart = db.query(Cart).filter_by(id=cart_id, session_id=session_id).first()
     if not cart:
-        raise ValueError(f"Cart id={cart_id} not found for session")
+        raise ValueError("Could not find your cart.")
     if cart.status != CartStatus.active:
-        raise ValueError(f"Cart is not active (status={cart.status})")
+        raise ValueError("Your cart is no longer active.")
     if not cart.items:
         raise ValueError("Cart is empty — cannot place order")
 

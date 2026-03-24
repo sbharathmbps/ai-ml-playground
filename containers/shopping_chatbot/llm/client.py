@@ -49,7 +49,7 @@ class OllamaClient:
             "model":  self.model,
             "prompt": prompt,
             "stream": False,
-            "keep_alive": self.keep_alive,
+            "keep_alive": int(self.keep_alive) if str(self.keep_alive).lstrip('-').isdigit() else self.keep_alive,
             "options": {
                 "temperature": self.temperature,
                 "num_ctx":     self.ctx_window,

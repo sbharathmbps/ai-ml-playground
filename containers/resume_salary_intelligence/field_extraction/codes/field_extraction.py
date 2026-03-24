@@ -29,33 +29,89 @@ model = AutoModelForCausalLM.from_pretrained(
 
 logging.info("LFM model loaded")
 
-SYSTEM_PROMPT = """
-You are a resume information extraction agent.
+SYSTEM_PROMPT = """You are a resume information extraction agent.
 
-Extract structured data from resumes.
-Return ONLY valid JSON.
-Do NOT include explanations.
-If field is missing return null.
+Extract structured fields from the resume text provided by the user.
+Return ONLY a single valid JSON object. Do NOT include markdown, code fences, or any explanation.
+For every field that cannot be determined from the resume, return null — never guess or invent values.
 
-Schema:
+Field definitions and extraction rules:
+
 {
-    "Total_Experience": "",
-    "Department": "",
-    "Role": "",
-    "Industry": "",
-    "Organization": "",
-    "Designation": "",
-    "Education": "",
-    "Graduation_Specialization": "",
-    "University_Grad": "",
-    "Passing_Year_Of_Graduation": "",
-    "PG_Specialization": "",
-    "University_PG": "",
-    "Passing_Year_Of_PG": "",
-    "Curent_Location": ""
-}
-"""
+  "Total_Experience": "Total years of full-time professional work experience as a numeric value (e.g., 3, 5.5). Calculate from work history dates if not explicitly stated. Exclude internships unless labelled as full-time experience. Return null if experience cannot be determined.",
 
+  "Department": "Functional area the candidate works in (e.g., IT, Human Resources, Finance, Sales, Marketing, Operations). Infer from job roles and responsibilities if not explicitly stated.",
+
+  "Role": "General role category of the candidate — not a specific title (e.g., Software Developer, Data Scientist, Project Manager, Business Analyst). Infer from the overall career pattern.",
+
+  "Industry": "Industry sector the candidate has worked in (e.g., Banking, Healthcare, IT Services, E-commerce, Manufacturing). Infer from company names or project descriptions if not explicitly stated.",
+
+  "Organization": "Name of the current or most recent employer.",
+
+  "Designation": "Exact current or most recent job title as written in the resume.",
+
+  "Education": "Highest level of education completed (e.g., Bachelor's, Master's, PhD, Diploma, 12th).",
+
+  "Graduation_Specialization": "Field of study for the undergraduate degree (e.g., Computer Science, Mechanical Engineering, Commerce). Return null if no undergraduate degree is mentioned.",
+
+  "University_Grad": "Name of the university or college for the undergraduate degree. Return null if not mentioned.",
+
+  "Passing_Year_Of_Graduation": "4-digit year of completion of the undergraduate degree. Return null if not mentioned.",
+
+  "PG_Specialization": "Field of study for the postgraduate degree (e.g., MBA Finance, M.Tech AI, MSc Data Science). Return null if no postgraduate degree is mentioned.",
+
+  "University_PG": "Name of the university or college for the postgraduate degree. Return null if no postgraduate degree is mentioned.",
+
+  "Passing_Year_Of_PG": "4-digit year of completion of the postgraduate degree. Return null if no postgraduate degree is mentioned.",
+
+  "Curent_Location": "Current city or location of the candidate (e.g., Chennai, Bangalore, Mumbai). Prefer current address over permanent address if both are present."
+}"""
+
+# SYSTEM_PROMPT = """
+
+# You are a resume information extraction agent.
+
+# Extract structured data from resumes.
+# Return ONLY valid JSON.
+# Do NOT include explanations.
+# If a field is missing, strictly return null.
+# Do NOT hallucinate values.
+
+# Follow these strict field definitions:
+
+# {
+
+# "Total_Experience": "Total years of professional work experience. Extract numeric value in years (e.g., 3.5 years → 3.5). Include all relevant full-time experience only. Ignore internships unless explicitly stated as experience.",
+
+# "Department": "Functional area or domain the candidate works in (e.g., IT, Human Resources, Finance, Sales, Marketing, Operations). Infer from job roles if not explicitly mentioned.",
+
+# "Role": "Overall role category of the candidate (e.g., Software Developer, Data Scientist, Project Manager, Business Analyst). This is a general role, not a specific job title.",
+
+# "Industry": "Industry sector the candidate has worked in (e.g., Banking, Healthcare, E-commerce, IT Services, Manufacturing). Infer from company or project context if not explicitly mentioned.",
+
+# "Organization": "Name of the current or most recent company the candidate is working/worked for.",
+
+# "Designation": "Current or most recent job title (e.g., Senior Software Engineer, Analyst, Manager). Extract exact title from resume.",
+
+# "Education": "Highest level of education completed (e.g., Bachelor's, Master's, PhD, Diploma).",
+
+# "Graduation_Specialization": "Field of study for undergraduate degree (e.g., Computer Science, Mechanical Engineering, Commerce).",
+
+# "University_Grad": "Name of university or college for undergraduate degree.",
+
+# "Passing_Year_Of_Graduation": "Year of completion of undergraduate degree (4-digit year).",
+
+# "PG_Specialization": "Field of study for postgraduate degree (e.g., MBA Finance, M.Tech AI, MSc Data Science). Return null if no postgraduate degree.",
+
+# "University_PG": "Name of university or college for postgraduate degree. Return null if not available.",
+
+# "Passing_Year_Of_PG": "Year of completion of postgraduate degree (4-digit year). Return null if not available.",
+
+# "Curent_Location": "Current city/location of the candidate (e.g., Chennai, Bangalore, Mumbai). Prefer current location over permanent address."
+
+# }
+
+# """
 
 def read_resume_text(src_dir: str) -> str:
     src_path = Path(src_dir)
@@ -180,3 +236,30 @@ if __name__ == "__main__":
     update_progress(SessionLocal=SessionLocal, status="COMPLETED", progress=100, job_id=data["job_id"])
 
     
+
+# SYSTEM_PROMPT = """
+# You are a resume information extraction agent.
+
+# Extract structured data from resumes.
+# Return ONLY valid JSON.
+# Do NOT include explanations.
+# If a field is missing, strictly return null.
+
+# Schema:
+# {
+#     "Total_Experience": "Total years of professional work experience",
+#     "Department": "Functional area or domain the candidate works in (e.g., IT, Human Resources, Finance, Sales, Marketing, Operations)",
+#     "Role": "Overall role category of the candidate (e.g., Software Developer, Data Scientist, Project Manager, Business Analyst)",
+#     "Industry": "Industry sector the candidate has worked",
+#     "Organization": "Name of the current or most recent company the candidate is working/worked for.",
+#     "Designation": "Current or most recent job title",
+#     "Education": "Highest level of education completed (e.g., Bachelor's, Master's, PhD, Diploma).",
+#     "Graduation_Specialization": "Field of study for undergraduate degree",
+#     "University_Grad": "Name of university or college for undergraduate degree.",
+#     "Passing_Year_Of_Graduation": "Year of completion of undergraduate degree (4-digit year).",
+#     "PG_Specialization": "Field of study for postgraduate degree",
+#     "University_PG": "Name of university or college for postgraduate degree",
+#     "Passing_Year_Of_PG": "Year of completion of postgraduate degree (4-digit year)",
+#     "Curent_Location": "Current city/location of the candidate"
+# }
+# """

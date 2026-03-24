@@ -21,7 +21,8 @@ from database_entry import (
     find_existing_market_ctc,
     update_application_market_ctc,
     get_application_market_ctc,
-    update_progress
+    update_progress,
+    get_job_status
 )
 logging.basicConfig(level=logging.INFO)
 
@@ -77,6 +78,7 @@ RISK WARNING SYSTEM: (end-to-end flow)
 - Once status become COMPLETED and progress become 100% you can fetch the output through @app.get("/risk_warning_system/{image_id}")
 - for output payload structure, you can refer get_risk_warning_outcomes from database_entry.py
 - Use the related table fields to create interactive screen for it.
+- need to check progress and status frequently (every second) to update in frontend
 """ 
 
 @app.post("/upload_image/")
@@ -166,7 +168,7 @@ async def fetch_risk_warning_outcomes(image_id: str):
 """
 RESUME SALARY INTELLIGENCE: (end-to-end flow) 
 - this is big one compared to previous module.
-- you might need two separate screen/sidebar option for employee tab and hr tab.
+- you might need two separate screen/sidebar option/module for employee tab and hr tab.
 - lets start with employee tab.
 - after resume uploded, user should supposed to fill the 22 field listed below with an example:
   "user_field": {
@@ -209,6 +211,8 @@ RESUME SALARY INTELLIGENCE: (end-to-end flow)
 - hr can either select or reject the application.
 - for output payload structure, you can refer relative function from database_entry.py
 - Use the related table fields to create interactive screen for it.
+- need to check progress and status frequently (every second) to update in frontend
+
 """ 
 
 @app.post("/upload_resume/")
@@ -243,6 +247,7 @@ class ResumeIntelligenceRequest(BaseModel):
 class inferenceApi_response(BaseModel):
     status: str
     Job_Name: str
+    job_id: str
 
 @app.post("/automated_field_extraction/")
 async def risk_warning_system(data: ResumeIntelligenceRequest):
@@ -347,6 +352,14 @@ async def recommendation_engine(data: ResumeIntelligenceRequest):
         update_progress(SessionLocal=SessionLocal, status="RUNNING", progress=10, job_id=job_id)
         return JSONResponse(content=inferenceApi_response(status=status,Job_Name=job_name,job_id=job_id).model_dump(),status_code=status_code)
     
+
+@app.get("/job_status/{job_id}")
+async def fetch_job_status(job_id: str):
+    result = get_job_status(SessionLocal, job_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return result
+
 
 @app.get("/recommended_jobs/{resume_id}")
 async def fetch_recommended_jobs(resume_id: str):

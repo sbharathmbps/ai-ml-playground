@@ -1,0 +1,199 @@
+<div class="page-content rw-page">
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div class="page-title">
+      <div class="title-icon"><mat-icon>warning_amber</mat-icon></div>
+      <div>
+        <h1>Risk Warning System</h1>
+        <p>Upload an image to detect risks and highlight hazardous zones using AI</p>
+      </div>
+    </div>
+    <button mat-stroked-button color="primary" (click)="reset()" *ngIf="stage !== 'upload'">
+      <mat-icon>refresh</mat-icon> New Analysis
+    </button>
+  </div>
+
+  <!-- ══════════════════ STAGE: UPLOAD ══════════════════ -->
+  <ng-container *ngIf="stage === 'upload'">
+    <div class="upload-layout">
+
+      <!-- Drop zone -->
+      <mat-card class="upload-card">
+        <mat-card-content>
+          <div class="upload-zone"
+               [class.drag-over]="dragOver"
+               (dragover)="$event.preventDefault(); dragOver=true"
+               (dragleave)="dragOver=false"
+               (drop)="onDrop($event)"
+               (click)="fileInput.click()">
+            <input #fileInput type="file" accept=".jpg" hidden (change)="onFileSelect($event)">
+            <mat-icon>cloud_upload</mat-icon>
+            <h3>Drop image here or click to browse</h3>
+            <p>Only .JPG images supported</p>
+          </div>
+
+          <div class="preview-area" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="preview" class="preview-img">
+            <p class="file-name"><mat-icon>image</mat-icon> {{ selectedFile?.name }}</p>
+          </div>
+
+          <div class="upload-actions" *ngIf="selectedFile">
+            <button mat-raised-button color="warn" (click)="uploadAndCheck()">
+              <mat-icon>search</mat-icon> Check Risks
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Info card -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>How it works</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="step" *ngFor="let s of steps; let i = index">
+            <div class="step-num">{{ i + 1 }}</div>
+            <div>
+              <strong>{{ s.title }}</strong>
+              <p>{{ s.desc }}</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════ STAGE: PROCESSING ══════════════════ -->
+  <ng-container *ngIf="stage === 'processing'">
+    <mat-card class="processing-card">
+      <mat-card-content>
+        <div class="processing-inner">
+          <mat-spinner diameter="72" color="warn"></mat-spinner>
+          <h2>Analyzing Image...</h2>
+          <p>Running AI risk detection pipeline. This may take a minute.</p>
+
+          <div class="progress-wrap">
+            <mat-progress-bar mode="determinate" [value]="progress" color="warn"></mat-progress-bar>
+            <span class="progress-pct">{{ progress }}%</span>
+          </div>
+
+          <div class="pipeline-stages">
+            <div class="ps-item" [class.active]="progress >= 10" [class.done]="progress >= 50">
+              <mat-icon>{{ progress >= 50 ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+              <span>Risk Factor Detection</span>
+            </div>
+            <div class="ps-arrow">→</div>
+            <div class="ps-item" [class.active]="progress >= 50" [class.done]="progress >= 100">
+              <mat-icon>{{ progress >= 100 ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+              <span>Object Grounding</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+
+  <!-- ══════════════════ STAGE: RESULTS ══════════════════ -->
+  <ng-container *ngIf="stage === 'results' && result">
+
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-item">
+        <mat-icon [class]="result.risk_detected ? 'icon-danger' : 'icon-safe'">
+          {{ result.risk_detected ? 'dangerous' : 'check_circle' }}
+        </mat-icon>
+        <div>
+          <span class="label">Risk Detected</span>
+          <strong>{{ result.risk_detected ? 'Yes' : 'No' }}</strong>
+        </div>
+      </div>
+      <mat-divider vertical></mat-divider>
+      <div class="summary-item">
+        <mat-icon class="icon-level">speed</mat-icon>
+        <div>
+          <span class="label">Risk Level</span>
+          <span class="mat-chip" [ngClass]="riskLevelClass">{{ result.risk_level | titlecase }}</span>
+        </div>
+      </div>
+      <mat-divider vertical></mat-divider>
+      <div class="summary-item">
+        <mat-icon class="icon-factors">format_list_bulleted</mat-icon>
+        <div>
+          <span class="label">Risk Factors</span>
+          <strong>{{ result.risk_factors.length }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results layout -->
+    <div class="results-layout">
+
+      <!-- LEFT: Image + canvas overlay -->
+      <mat-card class="image-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>image</mat-icon> Annotated View
+          </mat-card-title>
+          <mat-card-subtitle>Check risk factors to highlight zones</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="canvas-wrap">
+            <img #imageEl [src]="imagePreview" alt="analysed" class="result-img" (load)="redrawCanvas()">
+            <canvas #canvas class="bbox-canvas"></canvas>
+          </div>
+          <div class="legend" *ngIf="checkedFactors.size > 0">
+            <mat-icon>info</mat-icon>
+            <span>{{ checkedFactors.size }} risk factor(s) highlighted</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- RIGHT: Risk factors + explanation -->
+      <div class="right-panel">
+
+        <!-- Explanation card -->
+        <mat-card class="explanation-card">
+          <mat-card-header>
+            <mat-card-title><mat-icon>lightbulb</mat-icon> AI Explanation</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="explanation-text">{{ result.explanation }}</p>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Risk factors list -->
+        <mat-card class="factors-card">
+          <mat-card-header>
+            <mat-card-title><mat-icon>checklist</mat-icon> Risk Factors</mat-card-title>
+            <mat-card-subtitle>Select to highlight bounding boxes on the image</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="factor-item" *ngFor="let f of result.risk_factors; let i = index">
+              <mat-checkbox
+                [checked]="checkedFactors.has(f)"
+                (change)="toggleFactor(f, $event.checked)"
+                color="warn">
+              </mat-checkbox>
+              <div class="factor-text">
+                <span class="factor-num">{{ i + 1 }}</span>
+                <span>{{ f }}</span>
+              </div>
+              <div class="det-count" *ngIf="result.detections_by_risk_factor[f]">
+                <mat-icon>crop_free</mat-icon>
+                <span>{{ result.detections_by_risk_factor[f].bboxes.length }} bbox</span>
+              </div>
+            </div>
+
+            <div class="no-factors" *ngIf="result.risk_factors.length === 0">
+              <mat-icon>check_circle</mat-icon>
+              <span>No specific risk factors identified</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+    </div>
+  </ng-container>
+
+</div>

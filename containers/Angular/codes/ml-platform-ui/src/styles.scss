@@ -1,0 +1,72 @@
+@use '@angular/material' as mat;
+@include mat.core();
+
+$primary: mat.define-palette(mat.$indigo-palette, 700);
+$accent: mat.define-palette(mat.$cyan-palette, A200);
+$warn: mat.define-palette(mat.$red-palette);
+
+$theme: mat.define-light-theme((
+  color: (primary: $primary, accent: $accent, warn: $warn),
+  typography: mat.define-typography-config(),
+  density: 0
+));
+
+@include mat.all-component-themes($theme);
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+  background: #f0f2f5;
+  color: #1a1a2e;
+}
+
+.page-content { padding: 24px; }
+
+.chip-low    { background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: 600 !important; }
+.chip-medium { background: #fff8e1 !important; color: #f57f17 !important; font-weight: 600 !important; }
+.chip-high   { background: #ffebee !important; color: #c62828 !important; font-weight: 600 !important; }
+.chip-applied  { background: #e3f2fd !important; color: #1565c0 !important; }
+.chip-selected { background: #e8f5e9 !important; color: #2e7d32 !important; }
+.chip-rejected { background: #ffebee !important; color: #c62828 !important; }
+
+.mat-mdc-card { border-radius: 12px !important; }
+
+.upload-zone {
+  border: 2px dashed #9c27b0;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: #fafafa;
+  &:hover, &.drag-over { background: #f3e5f5; border-color: #7b1fa2; }
+  mat-icon { font-size: 48px; height: 48px; width: 48px; color: #9c27b0; }
+  p { color: #757575; margin-top: 12px; }
+}
+
+.bubble-user {
+  background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+  color: #fff;
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 16px;
+  word-wrap: break-word;
+}
+
+.bubble-bot {
+  background: #fff;
+  color: #1a1a2e;
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 16px;
+  max-width: 85%;
+  border: 1px solid #e0e0e0;
+  word-wrap: break-word;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #bdbdbd; border-radius: 3px; }
+
+.success-snack .mdc-snackbar__surface { background: #2e7d32 !important; }
+.error-snack   .mdc-snackbar__surface { background: #c62828 !important; }

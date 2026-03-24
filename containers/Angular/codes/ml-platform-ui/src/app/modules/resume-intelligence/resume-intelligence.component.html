@@ -1,0 +1,342 @@
+<div class="page-content ri-page">
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div class="page-title">
+      <div class="title-icon"><mat-icon>description</mat-icon></div>
+      <div>
+        <h1>Resume Salary Intelligence</h1>
+        <p>AI-powered resume analysis, job matching and salary prediction</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ TABS ══════════════════ -->
+  <mat-tab-group animationDuration="200ms" class="main-tabs" (selectedTabChange)="$event.index === 1 && onHrTabActivated()">
+
+    <!-- ═══════════ EMPLOYEE TAB ═══════════ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">person</mat-icon>
+        Employee Portal
+      </ng-template>
+
+      <!-- STAGE: Upload -->
+      <div class="tab-content" *ngIf="empStage === 'upload'">
+        <div class="emp-upload-layout">
+          <mat-card class="upload-card">
+            <mat-card-content>
+              <div class="upload-zone" (click)="resumeInput.click()">
+                <input #resumeInput type="file" accept=".pdf" hidden (change)="onResumeFile($event)">
+                <mat-icon>picture_as_pdf</mat-icon>
+                <h3>Upload your Resume</h3>
+                <p>PDF format only</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="feature-card">
+            <mat-card-header><mat-card-title>What you'll get</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <div class="feature-item" *ngFor="let f of employeeFeatures">
+                <mat-icon [style.color]="f.color">{{ f.icon }}</mat-icon>
+                <div>
+                  <strong>{{ f.title }}</strong>
+                  <p>{{ f.desc }}</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- STAGE: Fields -->
+      <div class="tab-content" *ngIf="empStage === 'fields'">
+        <mat-card class="fields-card">
+          <mat-card-header>
+            <mat-card-title><mat-icon>edit_note</mat-icon> Profile Details</mat-card-title>
+            <mat-card-subtitle>Fill in your details. Use AI to auto-fill from your resume.</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+
+            <!-- AI extraction bar -->
+            <div class="ai-bar">
+              <div class="ai-left">
+                <mat-icon>auto_awesome</mat-icon>
+                <div>
+                  <strong>Auto-fill with AI</strong>
+                  <p>Extract fields automatically from your uploaded resume</p>
+                </div>
+              </div>
+              <button mat-raised-button color="accent" (click)="extractWithAI()" [disabled]="extracting">
+                <mat-icon>{{ extracting ? 'hourglass_empty' : 'bolt' }}</mat-icon>
+                {{ extracting ? 'Extracting...' : 'Extract with AI' }}
+              </button>
+            </div>
+
+            <!-- Extraction progress -->
+            <div class="extraction-progress" *ngIf="extracting">
+              <mat-progress-bar mode="determinate" [value]="extractProgress" color="accent"></mat-progress-bar>
+              <span>{{ extractProgress }}% — Analyzing resume content...</span>
+            </div>
+
+            <mat-divider class="form-divider"></mat-divider>
+
+            <!-- 22 fields form -->
+            <div class="fields-grid">
+              <mat-form-field *ngFor="let f of fieldKeys" appearance="outline" class="field-item">
+                <mat-label>{{ f.label }}</mat-label>
+                <mat-select *ngIf="f.type === 'select'" [formControl]="$any(jobForm.get(f.key))">
+                  <mat-option *ngFor="let opt of f.options" [value]="opt.value">{{ opt.label }}</mat-option>
+                </mat-select>
+                <input *ngIf="f.type === 'number'" matInput type="number" [min]="f.min ?? null" [max]="f.max ?? null" [formControl]="$any(jobForm.get(f.key))">
+                <input *ngIf="!f.type || f.type === 'text'" matInput [formControl]="$any(jobForm.get(f.key))">
+              </mat-form-field>
+            </div>
+
+            <div class="form-actions">
+              <button class="ai-find-btn" mat-raised-button (click)="submitFields()" [disabled]="submitting">
+                <mat-icon>{{ submitting ? 'hourglass_empty' : 'psychology' }}</mat-icon>
+                {{ submitting ? 'Saving & Starting AI…' : 'Save & Find Matching Jobs' }}
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- STAGE: Job Recommendations -->
+      <div class="tab-content" *ngIf="empStage === 'jobs'">
+
+        <!-- Loading jobs -->
+        <div class="rec-loading" *ngIf="recLoading">
+          <div class="ai-loader-icon">
+            <mat-icon>psychology</mat-icon>
+          </div>
+          <h3>AI Job Matching in Progress</h3>
+          <p class="ai-loader-sub">Analyzing your profile against available positions…</p>
+          <mat-progress-bar mode="determinate" [value]="recProgress" color="primary" class="ai-progress"></mat-progress-bar>
+          <span class="ai-progress-pct">{{ recProgress }}% complete</span>
+        </div>
+
+        <div class="jobs-layout" *ngIf="!recLoading">
+          <!-- Jobs list -->
+          <div class="jobs-list">
+            <div class="jobs-header">
+              <h2><mat-icon>work</mat-icon> Recommended Jobs</h2>
+              <span class="job-count">{{ recommendedJobs.length }} matches</span>
+            </div>
+            <div class="job-card"
+                 *ngFor="let job of recommendedJobs"
+                 [class.active]="selectedJob?.job_id === job.job_id"
+                 (click)="selectedJob = job">
+              <div class="job-rank">
+                <span class="rank-badge">#{{ job.rank }}</span>
+              </div>
+              <div class="job-info">
+                <p class="job-desc-preview">{{ job.description | slice:0:120 }}...</p>
+                <div class="job-meta">
+                  <span class="score-chip" *ngIf="job.score">
+                    <mat-icon>star</mat-icon> {{ (job.score * 100).toFixed(0) }}% match
+                  </span>
+                  <span class="applied-chip" *ngIf="appliedJobIds.has(job.job_id)">
+                    <mat-icon>check_circle</mat-icon> Applied
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Job Detail -->
+          <mat-card class="job-detail-card" *ngIf="selectedJob">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>business_center</mat-icon> Job Description
+                <span class="rank-label">&nbsp;— Rank #{{ selectedJob.rank }}</span>
+              </mat-card-title>
+              <mat-card-subtitle *ngIf="selectedJob.score">
+                Match Score: {{ (selectedJob.score * 100).toFixed(1) }}%
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="jd-full">{{ selectedJob.description }}</p>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-raised-button color="primary"
+                      (click)="applyForJob(selectedJob)"
+                      [disabled]="appliedJobIds.has(selectedJob.job_id)">
+                <mat-icon>send</mat-icon>
+                {{ appliedJobIds.has(selectedJob.job_id) ? 'Already Applied' : 'Apply Now' }}
+              </button>
+            </mat-card-actions>
+          </mat-card>
+
+          <mat-card class="job-detail-card placeholder-card" *ngIf="!selectedJob">
+            <div class="placeholder-inner">
+              <mat-icon>touch_app</mat-icon>
+              <p>Select a job from the list to view details</p>
+            </div>
+          </mat-card>
+        </div>
+      </div>
+
+    </mat-tab>
+
+    <!-- ═══════════ HR TAB ═══════════ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">admin_panel_settings</mat-icon>
+        HR Dashboard
+      </ng-template>
+
+      <div class="tab-content">
+        <div class="hr-layout">
+
+          <!-- LEFT: Applications list -->
+          <div class="hr-left">
+            <!-- Filter chips -->
+            <div class="filter-bar">
+              <span class="filter-label">Filter:</span>
+              <button mat-stroked-button
+                      *ngFor="let f of hrFilters"
+                      [class.active-filter]="hrFilter === f.value"
+                      (click)="loadHrApplications(f.value)">
+                {{ f.label }}
+              </button>
+              <button mat-icon-button (click)="loadHrApplications(hrFilter)" matTooltip="Refresh">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+
+            <div class="hr-loading" *ngIf="hrLoading">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+
+            <div class="applications-list" *ngIf="!hrLoading">
+              <div class="no-apps" *ngIf="hrApplications.length === 0">
+                <mat-icon>inbox</mat-icon>
+                <p>No applications found</p>
+              </div>
+
+              <div class="app-item"
+                   *ngFor="let app of hrApplications"
+                   [class.active]="selectedApplication?.application_id === app.application_id"
+                   (click)="viewApplication(app)">
+                <div class="app-avatar">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="app-info">
+                  <strong class="app-name">{{ app.user_field?.['Role'] || 'Candidate' }}</strong>
+                  <span class="app-org">{{ app.user_field?.['Organization'] || '—' }}</span>
+                  <span class="app-date">{{ app.created_at | date:'dd MMM yyyy' }}</span>
+                </div>
+                <span class="status-badge" [ngClass]="statusClass(app.status)">
+                  {{ app.status | titlecase }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Application detail -->
+          <div class="hr-right">
+            <div class="no-selection" *ngIf="!selectedApplication">
+              <mat-icon>manage_accounts</mat-icon>
+              <h3>Select an application</h3>
+              <p>Click on any application from the list to review details</p>
+            </div>
+
+            <div class="app-detail" *ngIf="selectedApplication">
+
+              <!-- Header -->
+              <div class="app-detail-header">
+                <div class="candidate-avatar">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="candidate-info">
+                  <h2>{{ selectedApplication.user_field?.['Role'] || 'Candidate' }}</h2>
+                  <p>{{ selectedApplication.user_field?.['Organization'] || '' }}
+                     {{ selectedApplication.user_field?.['Designation'] ? '• ' + selectedApplication.user_field?.['Designation'] : '' }}
+                  </p>
+                </div>
+                <span class="detail-status-badge" [ngClass]="statusClass(selectedApplication.status)">
+                  {{ selectedApplication.status | titlecase }}
+                </span>
+              </div>
+
+              <!-- Profile fields -->
+              <mat-card class="profile-fields-card">
+                <mat-card-header><mat-card-title>Candidate Profile</mat-card-title></mat-card-header>
+                <mat-card-content>
+                  <div class="profile-grid">
+                    <div class="profile-row" *ngFor="let k of fieldDisplayKeys">
+                      <span class="pf-key">{{ k.label }}</span>
+                      <span class="pf-val">{{ selectedApplication.user_field?.[k.key] || '—' }}</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Job description -->
+              <mat-card class="jd-card">
+                <mat-card-header><mat-card-title>Applied Job</mat-card-title></mat-card-header>
+                <mat-card-content>
+                  <p class="jd-text">{{ selectedApplication.job_description }}</p>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Salary prediction -->
+              <mat-card class="salary-card">
+                <mat-card-header>
+                  <mat-card-title><mat-icon>payments</mat-icon> Market CTC</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="salary-row" *ngIf="selectedApplication.market_ctc">
+                    <mat-icon class="salary-icon">account_balance_wallet</mat-icon>
+                    <div>
+                      <span class="salary-amount">{{ formatCTC(selectedApplication.market_ctc) }}</span>
+                      <span class="salary-label">Market Value</span>
+                    </div>
+                  </div>
+                  <div class="salary-placeholder" *ngIf="!selectedApplication.market_ctc && !salaryLoading">
+                    <mat-icon>monetization_on</mat-icon>
+                    <p>Market value not calculated yet</p>
+                  </div>
+                  <div class="salary-loading-wrap" *ngIf="salaryLoading">
+                    <mat-spinner diameter="36"></mat-spinner>
+                    <span>Calculating market value...</span>
+                  </div>
+                </mat-card-content>
+                <mat-card-actions *ngIf="!selectedApplication.market_ctc">
+                  <button class="ai-cta-btn" mat-raised-button
+                          (click)="calculateMarketValue()"
+                          [disabled]="salaryLoading">
+                    <mat-icon>psychology</mat-icon> Calculate Market Value
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+
+              <!-- Actions -->
+              <div class="app-actions" *ngIf="selectedApplication.status === 'applied'">
+                <button mat-raised-button color="primary"
+                        (click)="updateStatus('selected')">
+                  <mat-icon>check_circle</mat-icon> Select Candidate
+                </button>
+                <button mat-stroked-button color="warn"
+                        (click)="updateStatus('rejected')">
+                  <mat-icon>cancel</mat-icon> Reject
+                </button>
+              </div>
+
+              <div class="final-status" *ngIf="selectedApplication.status !== 'applied'">
+                <mat-icon [class]="selectedApplication.status === 'selected' ? 'icon-selected' : 'icon-rejected'">
+                  {{ selectedApplication.status === 'selected' ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+                <span>Application {{ selectedApplication.status | titlecase }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

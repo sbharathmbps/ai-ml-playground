@@ -29,6 +29,7 @@ from chatbot import session as session_store
 from chatbot.executor import execute_select
 from schemas.responses import ChatRequest, ChatResponse, HealthResponse
 from llm.client import llm_client
+from llm.prompt_builder import build_prompt
 
 logging.basicConfig(
     level=logging.DEBUG if DEBUG else logging.INFO,
@@ -44,6 +45,13 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up — creating tables and seeding data …")
     create_tables()
     seed()
+    logger.info("Warming up LLM model …")
+    try:
+        warmup_prompt = build_prompt("hi", [], None, "warmup", False)
+        await run_in_threadpool(llm_client.generate, warmup_prompt)
+        logger.info("LLM warmup complete.")
+    except Exception as e:
+        logger.warning("LLM warmup failed (non-fatal): %s", e)
     logger.info("Startup complete.")
     yield
     logger.info("Shutting down.")

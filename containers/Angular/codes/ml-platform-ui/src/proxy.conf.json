@@ -1,0 +1,14 @@
+{
+  "/api/inference": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "pathRewrite": { "^/api/inference": "" },
+    "changeOrigin": true
+  },
+  "/api/chatbot": {
+    "target": "http://localhost:5000",
+    "secure": false,
+    "pathRewrite": { "^/api/chatbot": "" },
+    "changeOrigin": true
+  }
+}

@@ -17,7 +17,7 @@ LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 LLM_CTX_WINDOW  = int(os.getenv("LLM_CTX_WINDOW", "4096"))
 LLM_TIMEOUT_SEC = int(os.getenv("LLM_TIMEOUT_SEC", "600"))
 LLM_NUM_PREDICT = int(os.getenv("LLM_NUM_PREDICT", "128"))
-OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "-1")
 
 # ── App ───────────────────────────────────────────────────────────────────────
 APP_TITLE   = "Shopping Chatbot API"

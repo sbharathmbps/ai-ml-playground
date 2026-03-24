@@ -16,7 +16,7 @@ from llm.response_parser import parse_llm_output, READ_INTENTS
 logger = logging.getLogger(__name__)
 
 
-def handle_turn(
+def _handle_turn_inner(
     user_message: str,
     session_id: str,
     db: Session,
@@ -35,24 +35,34 @@ def handle_turn(
     """
 
     # ── 1. Session ─────────────────────────────────────────────────────────────
-    sess = session_store.get_or_create_session(session_id)
+    try:
+        sess = session_store.get_or_create_session(session_id)
+    except Exception as e:
+        logger.error(f"Session init failed: {e}")
+        return formatter.fmt_error("Something went wrong. Please try again.")
     sid  = sess["session_id"]   # may differ if a new session was created
 
     # ── 2. Build prompt ────────────────────────────────────────────────────────
-    prompt = build_prompt(
-        user_message          = user_message,
-        history               = sess["history"],
-        last_results          = sess["last_results"],
-        session_id            = sid,
-        awaiting_confirmation = sess["awaiting_confirmation"],
-    )
+    try:
+        prompt = build_prompt(
+            user_message          = user_message,
+            history               = sess["history"],
+            last_results          = sess["last_results"],
+            session_id            = sid,
+            awaiting_confirmation = sess["awaiting_confirmation"],
+        )
+    except Exception as e:
+        logger.error(f"Prompt build failed: {e}")
+        resp = formatter.fmt_error("Something went wrong. Please try again.")
+        resp["session_id"] = sid
+        return resp
 
     # ── 3. LLM call ────────────────────────────────────────────────────────────
     try:
         raw_llm = llm_client.generate(prompt)
     except RuntimeError as e:
         logger.error(f"LLM call failed: {e}")
-        resp = formatter.fmt_error(f"AI service unavailable: {e}")
+        resp = formatter.fmt_error("Something went wrong. Please try again.")
         resp["session_id"] = sid
         return resp
 
@@ -71,7 +81,7 @@ def handle_turn(
                 session_store.update_session(sid, last_results=rows)
             except Exception as e:
                 logger.error(f"SELECT failed: {e}")
-                response = formatter.fmt_error(f"Database error: {e}")
+                response = formatter.fmt_error("Something went wrong. Please try again.")
 
             if response is None:
                 if parsed.intent == "view_cart":
@@ -210,6 +220,19 @@ def handle_turn(
     # Attach session_id so client can track it
     response["session_id"] = sid
     return response
+
+
+def handle_turn(
+    user_message: str,
+    session_id: str,
+    db: Session,
+) -> dict:
+    """Wrapper that guarantees a safe chat-shaped response even on unexpected errors."""
+    try:
+        return _handle_turn_inner(user_message, session_id, db)
+    except Exception as e:
+        logger.exception(f"Unhandled error in handle_turn: {e}")
+        return formatter.fmt_error("Something went wrong. Please try again.")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

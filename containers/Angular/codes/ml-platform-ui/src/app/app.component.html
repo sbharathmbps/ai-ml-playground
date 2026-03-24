@@ -1,0 +1,64 @@
+<mat-sidenav-container class="app-container">
+
+  <!-- ===== SIDEBAR ===== -->
+  <mat-sidenav
+    mode="side"
+    [opened]="true"
+    autosize
+    [style.width]="sidebarExpanded ? '240px' : '64px'"
+    class="sidebar">
+
+    <!-- Logo / brand -->
+    <div class="sidebar-header" [class.collapsed]="!sidebarExpanded">
+      <div class="brand-icon">
+        <mat-icon>smart_toy</mat-icon>
+      </div>
+      <span class="brand-text" *ngIf="sidebarExpanded">ML Platform</span>
+    </div>
+
+    <!-- Nav items — plain anchors for full layout control -->
+    <nav class="nav-list" [class.collapsed]="!sidebarExpanded">
+      <a *ngFor="let m of modules"
+         [routerLink]="m.route"
+         routerLinkActive="active-link"
+         [matTooltip]="!sidebarExpanded ? m.label : ''"
+         matTooltipPosition="right"
+         class="nav-item">
+        <div class="nav-icon-wrap" [style.background]="m.color + '22'">
+          <mat-icon [style.color]="m.color">{{ m.icon }}</mat-icon>
+        </div>
+        <span class="nav-label" *ngIf="sidebarExpanded">{{ m.label }}</span>
+      </a>
+    </nav>
+
+    <!-- Collapse toggle at bottom -->
+    <div class="sidebar-footer">
+      <button mat-icon-button (click)="toggleSidebar()" class="toggle-btn">
+        <mat-icon>{{ sidebarExpanded ? 'chevron_left' : 'chevron_right' }}</mat-icon>
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <mat-sidenav-content class="main-content">
+
+    <!-- Top toolbar -->
+    <mat-toolbar class="top-bar">
+      <div class="toolbar-left">
+        <mat-icon class="toolbar-logo">analytics</mat-icon>
+        <span class="toolbar-title">ML Platform</span>
+      </div>
+      <span class="spacer"></span>
+      <div class="toolbar-right">
+        <mat-icon class="status-dot live">circle</mat-icon>
+        <span class="status-text">Live</span>
+      </div>
+    </mat-toolbar>
+
+    <!-- Routed module content -->
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

@@ -124,6 +124,16 @@ def update_progress(SessionLocal, status, progress, job_id):
     finally:
         session.close()
 
+def get_job_status(SessionLocal, job_id):
+    session = SessionLocal()
+    try:
+        job = session.query(JobStatus).filter(JobStatus.job_id == job_id).first()
+        if job is None:
+            return None
+        return {"status": job.status, "progress": job.progress}
+    finally:
+        session.close()
+
 #================================ Risk warning system ==========================================
 
 def insert_uploaded_image(SessionLocal, image_id, image_path):

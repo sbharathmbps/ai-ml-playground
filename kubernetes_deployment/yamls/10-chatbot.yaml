@@ -100,7 +100,7 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 20       # 20 x 15s = 5 min max startup time
+          failureThreshold: 20       # 20 x 10s = 200s max startup time
  
         # Liveness probe — only restarts if pod is genuinely deadlocked
         # Uses high failureThreshold so transient slowness doesn't cause restart
@@ -132,7 +132,7 @@ spec:
   selector:
     app: chatbot-app
   ports:
-  - protocol: TCPs
+  - protocol: TCP
     port: 5000
     targetPort: 5000
   type: ClusterIP

@@ -1,0 +1,221 @@
+<div class="chatbot-wrapper">
+
+  <!-- ── Left panel: Chat ── -->
+  <div class="chat-panel">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-title">
+        <div class="bot-avatar"><mat-icon>sports_soccer</mat-icon></div>
+        <div>
+          <h2>Sports Shopping Assistant</h2>
+          <span class="online-status"><mat-icon>circle</mat-icon> Online</span>
+        </div>
+      </div>
+      <div class="chat-actions">
+        <button mat-icon-button
+                [matBadge]="cartCount > 0 ? cartCount : null"
+                matBadgeColor="warn"
+                matTooltip="View cart"
+                (click)="rightTab = 0; rightPanelOpen = true; loadCart()">
+          <mat-icon>shopping_cart</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Order history"
+                (click)="rightTab = 1; rightPanelOpen = true; loadOrders()">
+          <mat-icon>receipt_long</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Clear session" (click)="clearSession()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages area -->
+    <div #chatScroll class="messages-area">
+
+      <!-- Welcome suggestions if only greeting -->
+      <div class="suggestions-wrap" *ngIf="messages.length === 1">
+        <p class="suggestions-label">Try asking:</p>
+        <div class="suggestion-chips">
+          <button mat-stroked-button
+                  *ngFor="let s of suggestions"
+                  class="suggestion-chip"
+                  (click)="sendMessage(s)">
+            {{ s }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div *ngFor="let msg of messages" class="message-row" [class.user-row]="msg.role === 'user'">
+
+        <!-- Bot avatar -->
+        <div class="bot-msg-avatar" *ngIf="msg.role === 'bot'">
+          <mat-icon>sports_soccer</mat-icon>
+        </div>
+
+        <div class="bubble-col" [class.user-col]="msg.role === 'user'">
+          <!-- Text bubble -->
+          <div [ngClass]="msg.role === 'user' ? 'bubble-user' : 'bubble-bot'">
+            {{ msg.text }}
+          </div>
+
+          <!-- Product cards -->
+          <div class="product-cards" *ngIf="isProductList(msg)">
+            <div class="product-card" *ngFor="let p of msg.data">
+              <div class="product-img">
+                <mat-icon>sports</mat-icon>
+              </div>
+              <div class="product-info">
+                <div class="product-name">{{ p.name }}</div>
+                <div class="product-brand">{{ p.brand }}</div>
+                <div class="product-stars">
+                  <mat-icon *ngFor="let s of stars(p.rating)" class="star">star</mat-icon>
+                  <span class="rating-num">{{ p.rating }}</span>
+                </div>
+                <div class="product-price">{{ formatPrice(p.price) }}</div>
+                <div class="stock-label" [class.out]="p.stock_qty === 0">
+                  {{ p.stock_qty > 0 ? p.stock_qty + ' in stock' : 'Out of stock' }}
+                </div>
+              </div>
+              <button mat-mini-fab color="primary" class="add-btn"
+                      matTooltip="Add to cart"
+                      [disabled]="p.stock_qty === 0"
+                      (click)="sendMessage('add ' + p.name + ' to cart')">
+                <mat-icon>add_shopping_cart</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cart summary -->
+          <div class="cart-summary" *ngIf="isCartView(msg) && msg.data?.length > 0">
+            <div class="cart-item-row" *ngFor="let item of msg.data">
+              <span class="ci-name">{{ item.name }}</span>
+              <span class="ci-qty">x{{ item.qty }}</span>
+              <span class="ci-price">{{ formatPrice(item.subtotal) }}</span>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="cart-total">
+              <span>Total</span>
+              <strong>{{ formatPrice(msg.meta?.['subtotal'] || 0) }}</strong>
+            </div>
+          </div>
+
+          <!-- Order confirmed -->
+          <div class="order-confirmed" *ngIf="isOrderConfirmed(msg)">
+            <mat-icon class="check-icon">check_circle</mat-icon>
+            <div *ngIf="msg.data">
+              <div>Order #{{ msg.data.order_id }} confirmed</div>
+              <div class="order-total">Total: {{ formatPrice(msg.data.total) }}</div>
+            </div>
+          </div>
+
+          <!-- Timestamp -->
+          <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+        </div>
+
+        <!-- User avatar -->
+        <div class="user-msg-avatar" *ngIf="msg.role === 'user'">
+          <mat-icon>person</mat-icon>
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="message-row" *ngIf="isTyping">
+        <div class="bot-msg-avatar"><mat-icon>sports_soccer</mat-icon></div>
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <mat-form-field appearance="outline" class="msg-input">
+        <input matInput
+               #msgInput
+               [(ngModel)]="inputText"
+               placeholder="Ask about sports gear..."
+               (keydown)="onEnter($event)"
+               autocomplete="off">
+      </mat-form-field>
+      <button mat-fab color="primary" class="send-btn"
+              (click)="sendMessage()"
+              [disabled]="!inputText.trim() || isTyping">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Right panel: Cart + Orders ── -->
+  <div class="right-panel" [class.open]="rightPanelOpen">
+    <div class="right-header">
+      <div class="right-tabs">
+        <button mat-button [class.active-tab]="rightTab === 0" (click)="rightTab = 0; loadCart()">
+          <mat-icon [matBadge]="cartCount > 0 ? cartCount : null" matBadgeColor="warn">shopping_cart</mat-icon>
+          Cart
+        </button>
+        <button mat-button [class.active-tab]="rightTab === 1" (click)="rightTab = 1; loadOrders()">
+          <mat-icon>receipt_long</mat-icon> Orders
+        </button>
+      </div>
+      <button mat-icon-button (click)="rightPanelOpen = false"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <!-- CART -->
+    <div class="panel-content" *ngIf="rightTab === 0">
+      <div class="empty-panel" *ngIf="cart.length === 0">
+        <mat-icon>shopping_cart_checkout</mat-icon>
+        <p>Your cart is empty</p>
+        <span>Ask the bot to add items!</span>
+      </div>
+      <div class="cart-list" *ngIf="cart.length > 0">
+        <div class="cart-row" *ngFor="let item of cart">
+          <div class="cart-icon"><mat-icon>sports</mat-icon></div>
+          <div class="cart-info">
+            <div class="cart-name">{{ item.name }}</div>
+            <div class="cart-brand">{{ item.brand }}</div>
+          </div>
+          <div class="cart-right">
+            <span class="cart-qty">x{{ item.qty }}</span>
+            <span class="cart-price">{{ formatPrice(item.subtotal) }}</span>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="cart-footer">
+          <span>Subtotal</span>
+          <strong>{{ formatPrice(cartSubtotal) }}</strong>
+        </div>
+        <button mat-raised-button color="primary" class="checkout-btn"
+                (click)="sendMessage('place my order')">
+          <mat-icon>done_all</mat-icon> Place Order
+        </button>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="panel-content" *ngIf="rightTab === 1">
+      <div class="empty-panel" *ngIf="orders.length === 0">
+        <mat-icon>receipt</mat-icon>
+        <p>No orders yet</p>
+      </div>
+      <div class="order-list" *ngIf="orders.length > 0">
+        <div class="order-item" *ngFor="let o of orders">
+          <div class="order-header">
+            <span class="order-id">#{{ o.order_id }}</span>
+            <span class="order-status" [ngClass]="'status-' + o.status">{{ o.status | titlecase }}</span>
+          </div>
+          <div class="order-items-mini" *ngFor="let i of o.items">
+            <span>{{ i.name }}</span>
+            <span>x{{ i.qty }} · {{ formatPrice(i.subtotal) }}</span>
+          </div>
+          <div class="order-footer">
+            <span class="order-date">{{ o.created_at | date:'dd MMM, HH:mm' }}</span>
+            <strong class="order-total">{{ formatPrice(o.total) }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
