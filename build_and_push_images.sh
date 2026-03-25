@@ -48,8 +48,8 @@
 
 ##=====================================================================================================================================================================================================================
 
-cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction
-minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster
+# cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction
+# minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster
 # docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
 # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 

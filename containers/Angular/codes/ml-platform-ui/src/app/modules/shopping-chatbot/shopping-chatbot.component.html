@@ -152,7 +152,7 @@
     <div class="right-header">
       <div class="right-tabs">
         <button mat-button [class.active-tab]="rightTab === 0" (click)="rightTab = 0; loadCart()">
-          <mat-icon [matBadge]="cartCount > 0 ? cartCount : null" matBadgeColor="warn">shopping_cart</mat-icon>
+          <mat-icon>shopping_cart</mat-icon>
           Cart
         </button>
         <button mat-button [class.active-tab]="rightTab === 1" (click)="rightTab = 1; loadOrders()">
