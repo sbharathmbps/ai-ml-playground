@@ -257,6 +257,20 @@ def get_cart(session_id: str, db: Session = Depends(get_db)):
 # ORDERS
 # ══════════════════════════════════════════════════════════════════════════════
 
+@app.get("/orders", tags=["Orders"])
+def get_all_orders(db: Session = Depends(get_db)):
+    orders = (
+        db.query(Order)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+    return {
+        "response_type": "order_history",
+        "total":         len(orders),
+        "data":          [o.to_dict() for o in orders],
+    }
+
+
 @app.get("/orders/{session_id}", tags=["Orders"])
 def get_orders(session_id: str, db: Session = Depends(get_db)):
     orders = (

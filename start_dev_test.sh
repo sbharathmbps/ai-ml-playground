@@ -4,17 +4,10 @@
 
 # kubectl logs deployment/inference-engine-app-deployment -n app -f
 
-# #   Step 1 — Rebuild the Docker image (includes npm build inside Docker):                                                                  
-#   cd /mnt/data/ml-platform/containers/Angular                                                                                            
-#   minikube image build -f Dockerfile-env . -t angular-ml-platform:latest -p cpu-cluster                                                  
-                                                                                                                                         
-# #   Step 2 — Restart the deployment to pick up the new image:                                                                              
-#   kubectl rollout restart deployment/angular-app-deployment -n app
-
-# Step 1 — Build Angular locally (no Docker needed):                                                                            
-  cd /mnt/data/ml-platform/containers/Angular/codes/ml-platform-ui                                                              
-  npm run build -- --configuration=production                                                                                   
+# # Step 1 — Build Angular locally (no Docker needed):                                                                            
+#   cd /mnt/data/ml-platform/containers/Angular/codes/ml-platform-ui                                                              
+#   npm run build -- --configuration=production                                                                                   
                                                                                                                                 
-#   Step 2 — Copy built files directly into the running pod:                                                                      
-  # kubectl cp dist/ml-platform-ui/browser/. app/angular-app-deployment-7d8dd9567d-wthbq:/usr/share/nginx/html/     
-  kubectl cp dist/ml-platform-ui/browser/. app/angular-app-deployment-68b645ffd-mjxdt:/usr/share/nginx/html/ 2>&1
+# #   Step 2 — Copy built files directly into the running pod:                                                                      
+#   # kubectl cp dist/ml-platform-ui/browser/. app/angular-app-deployment-7d8dd9567d-wthbq:/usr/share/nginx/html/     
+#   kubectl cp dist/ml-platform-ui/browser/. app/angular-app-deployment-68b645ffd-mjxdt:/usr/share/nginx/html/ 2>&1

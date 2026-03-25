@@ -101,5 +101,9 @@
 
 ##=====================================================================================================================================================================================================================
 
-# cd /mnt/data/ml-platform/containers/Angular
-# minikube image build -f Dockerfile-env . -t angular-ml-platform:latest -p cpu-cluster
+#   Step 1 — Rebuild the Docker image (includes npm build inside Docker):                                                                  
+  cd /mnt/data/ml-platform/containers/Angular                                                                                            
+  minikube image build -f Dockerfile-env . -t angular-ml-platform:latest -p cpu-cluster                                                  
+                                                                                                                                         
+#   Step 2 — Restart the deployment to pick up the new image:                                                                              
+  kubectl rollout restart deployment/angular-app-deployment -n app
