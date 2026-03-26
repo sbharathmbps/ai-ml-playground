@@ -16,11 +16,7 @@ from llm.response_parser import parse_llm_output, READ_INTENTS
 logger = logging.getLogger(__name__)
 
 
-def _handle_turn_inner(
-    user_message: str,
-    session_id: str,
-    db: Session,
-) -> dict:
+def _handle_turn_inner(user_message: str, session_id: str, db: Session) -> dict:
     """
     Process one user message end-to-end and return a response dict.
 
@@ -222,11 +218,7 @@ def _handle_turn_inner(
     return response
 
 
-def handle_turn(
-    user_message: str,
-    session_id: str,
-    db: Session,
-) -> dict:
+def handle_turn(user_message: str, session_id: str, db: Session) -> dict:
     """Wrapper that guarantees a safe chat-shaped response even on unexpected errors."""
     try:
         return _handle_turn_inner(user_message, session_id, db)

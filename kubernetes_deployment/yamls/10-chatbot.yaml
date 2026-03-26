@@ -112,6 +112,24 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 10       # 10 x 30s = 5 min of failures before restart
 
+# startupProbe   → every 10s  (only during startup, stops once passed)
+# readinessProbe → every 10s  (entire pod lifetime)
+# livenessProbe  → every 30s  (entire pod lifetime, after startup passes)
+
+# Why you need both — real scenarios:
+# Scenario 1 — Ollama is busy with a long inference (2-3 min)
+# readinessProbe fails  →  pod removed from service  ✓ correct
+#                           no new requests come in while busy
+# livenessProbe         →  high failureThreshold (10 x 30s = 5 min)
+#                           won't restart just because Ollama is slow  ✓ correct
+# If you only had liveness — new requests would still pile up while Ollama is busy.
+# If you only had readiness — a genuinely deadlocked pod would never restart.
+
+# Scenario 2 — FastAPI process crashes/freezes
+# readinessProbe fails  →  stops traffic immediately  ✓
+# livenessProbe fails   →  restarts pod after 5 min  ✓
+# Without liveness, a crashed pod would just sit there forever getting no traffic but never recovering.
+
       volumes:
       - name: chatbot-pvc-volume
         persistentVolumeClaim:

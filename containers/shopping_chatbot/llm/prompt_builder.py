@@ -126,7 +126,7 @@ You have access to the following database schema:
    - general_question   : anything else (greet, help, etc.)
 
 2. For READ intents (search_product, filter_product, view_product, view_cart):
-   - Output a valid SQLite/PostgreSQL SELECT query
+   - Output a valid PostgreSQL SELECT query
    - Always use {{session_id}} as placeholder for session — never hardcode it
    - Never use SELECT * — always name the columns you need
    - Always filter stock_qty > 0 for product searches
