@@ -69,6 +69,13 @@ spec:
                 # imagePullPolicy: Always
                 command: ["python", "/app/risk_detection.py"]
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
+                resources:
+                    requests:
+                        memory: "12Gi"
+                        cpu: "1"
+                    limits:
+                        memory: "24Gi"
+                        cpu: "15"
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data
@@ -94,6 +101,13 @@ spec:
                 # imagePullPolicy: Always
                 command: ["python", "/app/sentence_to_bbox.py"]
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
+                # resources:
+                #     requests:
+                #         memory: "4Gi"
+                #         cpu: "1"
+                #     limits:
+                #         memory: "8Gi"
+                #         cpu: "4"
                 volumeMounts:
                     - name: input-data
                       mountPath: /mnt/data

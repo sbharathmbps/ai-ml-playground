@@ -20,27 +20,56 @@ logging.basicConfig(level=logging.INFO)
 # ================= MODEL CONFIG =================
 
 MODEL_ID = "Qwen/Qwen3-VL-4B-Instruct"
+MODEL_REVISION = os.getenv("QWEN_MODEL_REVISION")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-torch_dtype = torch.float16 if device == "cuda" else torch.float32
+
+
+def _preferred_cpu_dtype():
+    # bfloat16 cuts CPU memory roughly in half compared to float32 on model load.
+    # If the environment cannot support it cleanly, we fall back to float32.
+    return torch.bfloat16
+
+
+torch_dtype = torch.float16 if device == "cuda" else _preferred_cpu_dtype()
 
 # ================= LOAD MODEL =================
 
 logging.info("Loading Qwen VL model...")
 
+from_pretrained_kwargs = {
+    "trust_remote_code": True,
+    "low_cpu_mem_usage": True,
+    "local_files_only": os.getenv("HF_HUB_OFFLINE", "1") == "1",
+}
+if MODEL_REVISION:
+    from_pretrained_kwargs["revision"] = MODEL_REVISION
+
 processor = AutoProcessor.from_pretrained(
     MODEL_ID,
-    trust_remote_code=True
+    **from_pretrained_kwargs
 )
 
-model = AutoModelForImageTextToText.from_pretrained(
-    MODEL_ID,
-    trust_remote_code=True,
-    torch_dtype=torch_dtype,
-    low_cpu_mem_usage=True
-)
+try:
+    model = AutoModelForImageTextToText.from_pretrained(
+        MODEL_ID,
+        torch_dtype=torch_dtype,
+        **from_pretrained_kwargs
+    )
+except Exception:
+    if device == "cpu" and torch_dtype == torch.bfloat16:
+        logging.warning("CPU bfloat16 load failed. Retrying with float32.")
+        torch_dtype = torch.float32
+        model = AutoModelForImageTextToText.from_pretrained(
+            MODEL_ID,
+            torch_dtype=torch_dtype,
+            **from_pretrained_kwargs
+        )
+    else:
+        raise
 
-model.to(device)
+if device != "cpu":
+    model.to(device)
 
 logging.info("Qwen VL model loaded")
 
