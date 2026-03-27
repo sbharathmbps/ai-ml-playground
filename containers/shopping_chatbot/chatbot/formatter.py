@@ -147,6 +147,15 @@ def fmt_cancelled() -> dict:
     )
 
 
+def fmt_order_cancelled(order) -> dict:
+    return _envelope(
+        response_type = "order_cancelled",
+        message       = f"Order #{order.id} has been cancelled. Total refund: ₹{order.total}.",
+        data          = {"order_id": order.id, "total": order.total, "status": "cancelled"},
+        meta          = {"order_id": order.id},
+    )
+
+
 # ── General / error ───────────────────────────────────────────────────────────
 
 def fmt_general(message: str) -> dict:

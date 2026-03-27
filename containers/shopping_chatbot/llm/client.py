@@ -39,7 +39,7 @@ class OllamaClient:
         self.num_predict = num_predict
         self.keep_alive  = keep_alive
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, num_predict: int | None = None) -> str:
         """
         Send a prompt to Ollama and return the raw text response.
         Raises RuntimeError on failure.
@@ -53,7 +53,7 @@ class OllamaClient:
             "options": {
                 "temperature": self.temperature,
                 "num_ctx":     self.ctx_window,
-                "num_predict": self.num_predict,
+                "num_predict": num_predict if num_predict is not None else self.num_predict,
             },
         }
 

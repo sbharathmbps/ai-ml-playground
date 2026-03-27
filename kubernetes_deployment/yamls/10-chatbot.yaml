@@ -100,7 +100,7 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 20       # 20 x 10s = 200s max startup time
+          failureThreshold: 40       # 24 x 10s = 240s max startup time
  
         # Liveness probe — only restarts if pod is genuinely deadlocked
         # Uses high failureThreshold so transient slowness doesn't cause restart

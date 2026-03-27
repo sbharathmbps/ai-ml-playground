@@ -21,7 +21,7 @@ spec:
         imagePullPolicy: IfNotPresent
         command: ["nginx", "-g", "daemon off;"]
         ports:
-        - containerPort: 4200
+        - containerPort: 80
 
         resources:
           requests:
@@ -34,7 +34,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /
-            port: 4200
+            port: 80
           initialDelaySeconds: 5
           periodSeconds: 10
           timeoutSeconds: 3
@@ -43,7 +43,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 4200
+            port: 80
           periodSeconds: 30
           timeoutSeconds: 3
           failureThreshold: 5
@@ -62,7 +62,7 @@ spec:
     app: angular-app
   ports:
   - protocol: TCP
-    port: 4200
-    targetPort: 4200
-    nodePort: 30420
+    port: 80
+    targetPort: 80
+    nodePort: 30080
   type: NodePort

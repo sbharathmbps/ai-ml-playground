@@ -174,12 +174,21 @@ def _handle_turn_inner(user_message: str, session_id: str, db: Session) -> dict:
 
         # ── cancel_order ─────────────────────────────────────────────────────
         elif parsed.intent == "cancel_order":
-            session_store.update_session(
-                sid,
-                awaiting_confirmation = False,
-                pending_order_summary = None,
-            )
-            response = formatter.fmt_cancelled()
+            if sess["awaiting_confirmation"]:
+                # Cancel during checkout (before confirming)
+                session_store.update_session(
+                    sid,
+                    awaiting_confirmation = False,
+                    pending_order_summary = None,
+                )
+                response = formatter.fmt_cancelled()
+            else:
+                # Cancel a placed order
+                try:
+                    order = executor.cancel_last_order(db, sid)
+                    response = formatter.fmt_order_cancelled(order)
+                except ValueError as e:
+                    response = formatter.fmt_error(str(e))
 
         else:
             response = formatter.fmt_general(

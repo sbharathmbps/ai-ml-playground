@@ -234,3 +234,20 @@ def place_order(db: Session, session_id: str, cart_id: int) -> Order:
 
     logger.info(f"Order placed: id={order.id} total={order.total} session={session_id}")
     return order
+
+
+def cancel_last_order(db: Session, session_id: str) -> Order:
+    """Cancel the most recent confirmed order for this session."""
+    order = (
+        db.query(Order)
+        .filter_by(session_id=session_id, status=OrderStatus.confirmed)
+        .order_by(Order.created_at.desc())
+        .first()
+    )
+    if not order:
+        raise ValueError("No confirmed order found to cancel.")
+
+    order.status = OrderStatus.cancelled
+    db.commit()
+    logger.info(f"Order cancelled: id={order.id} session={session_id}")
+    return order

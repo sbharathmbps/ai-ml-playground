@@ -188,6 +188,10 @@ export class ShoppingChatbotComponent implements OnInit, OnDestroy, AfterViewChe
     return msg.responseType === 'product_list' && Array.isArray(msg.data) && msg.data.length > 0;
   }
 
+  isProductDetail(msg: ChatMessage): boolean {
+    return msg.responseType === 'product_detail' && msg.data && !Array.isArray(msg.data);
+  }
+
   isCartView(msg: ChatMessage): boolean {
     return ['cart_view', 'cart_updated'].includes(msg.responseType || '') && Array.isArray(msg.data);
   }

@@ -66,6 +66,12 @@ SQL: SELECT p.name, p.brand, ci.qty, ci.price_at_add, (ci.qty * ci.price_at_add)
      JOIN carts ca ON ci.cart_id = ca.id
      WHERE ca.session_id = '{session_id}' AND ca.status = 'active';
 
+User: "give me full details of SG Campus Cricket Bat"
+INTENT: view_product
+SQL: SELECT p.id, p.name, p.brand, p.price, p.stock_qty, p.rating, p.image_url, p.description, c.name as category
+     FROM products p JOIN categories c ON p.category_id = c.id
+     WHERE LOWER(p.name) LIKE '%sg campus cricket bat%';
+
 User: "show me all badminton rackets"
 INTENT: search_product
 SQL: SELECT p.id, p.name, p.brand, p.price, p.stock_qty, p.rating, p.image_url, c.name as category

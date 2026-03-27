@@ -87,6 +87,45 @@
             </div>
           </div>
 
+          <!-- Product detail -->
+          <div class="product-detail-card" *ngIf="isProductDetail(msg)">
+            <div class="product-detail-header">
+              <div class="product-img"><mat-icon>sports</mat-icon></div>
+              <div>
+                <div class="product-name">{{ msg.data.name }}</div>
+                <div class="product-brand">{{ msg.data.brand }}</div>
+                <div class="product-stars" *ngIf="msg.data.rating">
+                  <mat-icon *ngFor="let s of stars(msg.data.rating)" class="star">star</mat-icon>
+                  <span class="rating-num">{{ msg.data.rating }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="product-detail-body">
+              <div class="detail-row" *ngIf="msg.data.price">
+                <span class="detail-label">Price</span>
+                <span class="product-price">{{ formatPrice(msg.data.price) }}</span>
+              </div>
+              <div class="detail-row" *ngIf="msg.data.stock_qty != null">
+                <span class="detail-label">Stock</span>
+                <span class="stock-label" [class.out]="msg.data.stock_qty === 0">
+                  {{ msg.data.stock_qty > 0 ? msg.data.stock_qty + ' in stock' : 'Out of stock' }}
+                </span>
+              </div>
+              <div class="detail-row" *ngIf="msg.data.category">
+                <span class="detail-label">Category</span>
+                <span>{{ msg.data.category }}</span>
+              </div>
+              <div class="detail-description" *ngIf="msg.data.description">
+                {{ msg.data.description }}
+              </div>
+            </div>
+            <button mat-raised-button color="primary" class="detail-add-btn"
+                    [disabled]="msg.data.stock_qty === 0"
+                    (click)="sendMessage('add ' + msg.data.name + ' to cart')">
+              <mat-icon>add_shopping_cart</mat-icon> Add to cart
+            </button>
+          </div>
+
           <!-- Cart summary -->
           <div class="cart-summary" *ngIf="isCartView(msg) && msg.data?.length > 0">
             <div class="cart-item-row" *ngFor="let item of msg.data">

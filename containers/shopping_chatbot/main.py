@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
     logger.info("Warming up LLM model …")
     try:
         warmup_prompt = build_prompt("hi", [], None, "warmup", False)
-        await run_in_threadpool(llm_client.generate, warmup_prompt)
+        await run_in_threadpool(llm_client.generate, warmup_prompt, 1)
         logger.info("LLM warmup complete.")
     except Exception as e:
         logger.warning("LLM warmup failed (non-fatal): %s", e)

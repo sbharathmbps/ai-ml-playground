@@ -169,6 +169,8 @@ def parse_llm_output(raw_text: str, session_id: str) -> ParsedLLMResponse:
         )
         if sql_match:
             sql = sql_match.group(1).strip().rstrip(";") + ";"
+            # Replace quoted placeholder first to avoid double-quoting
+            sql = sql.replace("'{session_id}'", f"'{session_id}'")
             sql = sql.replace("{session_id}", f"'{session_id}'")
             first_word = sql.strip().split()[0].upper()
             if first_word != "SELECT":
