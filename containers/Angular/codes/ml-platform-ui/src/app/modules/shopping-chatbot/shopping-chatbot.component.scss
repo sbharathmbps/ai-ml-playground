@@ -331,6 +331,37 @@
   &:hover { background-color: #303f9f !important; }
 }
 
+/* Model loading banner */
+.model-loading-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 4px;
+  ::ng-deep circle { stroke: #f57c00; }
+  .loading-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    strong { font-size: 13px; color: #e65100; }
+    span { font-size: 12px; color: #795548; }
+  }
+}
+
+/* Loading status in header */
+.loading-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #f57c00;
+  ::ng-deep circle { stroke: #f57c00; }
+  ::ng-deep mat-progress-spinner { display: inline-flex; }
+}
+
 /* ── Right Panel ── */
 .right-panel {
   width: 0;

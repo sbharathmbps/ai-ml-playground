@@ -9,7 +9,11 @@
         <div class="bot-avatar"><mat-icon>sports_soccer</mat-icon></div>
         <div>
           <h2>Sports Shopping Assistant</h2>
-          <span class="online-status"><mat-icon>circle</mat-icon> Online</span>
+          <span class="online-status" *ngIf="!isModelLoading"><mat-icon>circle</mat-icon> Online</span>
+          <span class="loading-status" *ngIf="isModelLoading">
+            <mat-progress-spinner diameter="10" mode="indeterminate" strokeWidth="2"></mat-progress-spinner>
+            Loading model...
+          </span>
         </div>
       </div>
       <div class="chat-actions">
@@ -32,6 +36,15 @@
 
     <!-- Messages area -->
     <div #chatScroll class="messages-area">
+
+      <!-- Model loading banner -->
+      <div class="model-loading-banner" *ngIf="isModelLoading">
+        <mat-progress-spinner diameter="28" mode="indeterminate" strokeWidth="3"></mat-progress-spinner>
+        <div class="loading-text">
+          <strong>AI model is warming up...</strong>
+          <span>This takes 2–3 minutes after a fresh start. Please wait.</span>
+        </div>
+      </div>
 
       <!-- Welcome suggestions if only greeting -->
       <div class="suggestions-wrap" *ngIf="messages.length === 1">
@@ -174,13 +187,14 @@
         <input matInput
                #msgInput
                [(ngModel)]="inputText"
-               placeholder="Ask about sports gear..."
+               [placeholder]="isModelLoading ? 'Waiting for model to load...' : 'Ask about sports gear...'"
+               [disabled]="isModelLoading"
                (keydown)="onEnter($event)"
                autocomplete="off">
       </mat-form-field>
       <button mat-fab color="primary" class="send-btn"
               (click)="sendMessage()"
-              [disabled]="!inputText.trim() || isTyping">
+              [disabled]="!inputText.trim() || isTyping || isModelLoading">
         <mat-icon>send</mat-icon>
       </button>
     </div>

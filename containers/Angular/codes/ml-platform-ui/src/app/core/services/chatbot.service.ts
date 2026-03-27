@@ -34,6 +34,10 @@ export class ChatbotService {
     return this.http.get<ProductsResponse>(`${this.base}/products${query}`);
   }
 
+  ping(): Observable<any> {
+    return this.http.get(`${this.base}/health`);
+  }
+
   clearSession(sessionId: string): Observable<any> {
     return this.http.delete(`${this.base}/session/${sessionId}`);
   }

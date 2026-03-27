@@ -52,8 +52,11 @@ export class ShoppingChatbotComponent implements OnInit, OnDestroy, AfterViewChe
   inputText = '';
   sessionId: string | null = null;
   isTyping = false;
+  isModelLoading = true;
   rightPanelOpen = true;
   rightTab = 0;
+
+  private pingInterval: any;
 
   cart: CartItem[] = [];
   cartSubtotal = 0;
@@ -78,6 +81,16 @@ export class ShoppingChatbotComponent implements OnInit, OnDestroy, AfterViewChe
       text: '👋 Hi! I\'m your AI sports shopping assistant. Ask me anything — browse products, add items to cart, and place orders!',
       timestamp: new Date(),
       responseType: 'greeting'
+    });
+    this.checkBackendReady();
+  }
+
+  checkBackendReady() {
+    this.svc.ping().subscribe({
+      next: () => { this.isModelLoading = false; },
+      error: () => {
+        this.pingInterval = setTimeout(() => this.checkBackendReady(), 5000);
+      }
     });
   }
 
@@ -204,5 +217,7 @@ export class ShoppingChatbotComponent implements OnInit, OnDestroy, AfterViewChe
     return Array.from({ length: Math.round(rating) }, (_, i) => i);
   }
 
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    if (this.pingInterval) clearTimeout(this.pingInterval);
+  }
 }

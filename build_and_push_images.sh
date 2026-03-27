@@ -1,5 +1,5 @@
-# cd /mnt/data/ml-platform/containers/risk_warning_system/sentenced_object_detection
-# minikube image build -f Dockerfile-env . -t sentenced-obj-det-env:python-3.10-slim -p cpu-cluster
+cd /mnt/data/ml-platform/containers/risk_warning_system/sentenced_object_detection
+minikube image build -f Dockerfile-env . -t sentenced-obj-det-env:python-3.10-slim -p cpu-cluster
 # docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
 # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 
@@ -24,8 +24,8 @@
 #=====================================================================================================================================================================================================================
 
 
-# cd /mnt/data/ml-platform/containers/risk_warning_system/risk_detection
-# minikube image build -f Dockerfile-env . -t risk-detection-env:python-3.12 -p cpu-cluster
+cd /mnt/data/ml-platform/containers/risk_warning_system/risk_detection
+minikube image build -f Dockerfile-env . -t risk-detection-env:python-3.12 -p cpu-cluster
 # docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
 # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 
@@ -101,9 +101,9 @@
 
 ##=====================================================================================================================================================================================================================
 
-#   Step 1 — Rebuild the Docker image (includes npm build inside Docker):                                                                  
-  cd /mnt/data/ml-platform/containers/Angular                                                                                            
-  minikube image build -f Dockerfile-env . -t angular-ml-platform:latest -p cpu-cluster                                                  
+# #   Step 1 — Rebuild the Docker image (includes npm build inside Docker):                                                                  
+#   cd /mnt/data/ml-platform/containers/Angular                                                                                            
+#   minikube image build -f Dockerfile-env . -t angular-ml-platform:latest -p cpu-cluster                                                  
                                                                                                                                          
-#   Step 2 — Restart the deployment to pick up the new image:                                                                              
-  kubectl rollout restart deployment/angular-app-deployment -n app
+# #   Step 2 — Restart the deployment to pick up the new image:                                                                              
+#   kubectl rollout restart deployment/angular-app-deployment -n app

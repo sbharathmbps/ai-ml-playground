@@ -77,8 +77,8 @@ spec:
             memory: "1Gi"
             cpu: "1"
           limits:
-            memory: "12Gi"
-            cpu: "15"
+            memory: "10Gi"
+            cpu: "18"
 
         # Don't send traffic until Ollama + FastAPI are both up
         # Readiness probe — k8s won't send traffic until this passes
