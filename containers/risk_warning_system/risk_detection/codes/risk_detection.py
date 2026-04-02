@@ -195,3 +195,5 @@ if __name__ == '__main__':
     logging.info("\nFinal Structured Output:")
     logging.info(json.dumps(final_output, indent=2))
     update_risk_detection(SessionLocal, folder_name, final_output)
+
+##

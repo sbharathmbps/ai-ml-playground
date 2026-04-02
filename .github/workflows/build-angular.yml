@@ -1,0 +1,26 @@
+name: Build and Deploy Angular
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'containers/Angular/**'
+
+jobs:
+  build-and-deploy:
+    name: Build image and restart deployment
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Angular image
+        working-directory: containers/Angular
+        run: |
+          minikube image build -f Dockerfile-env . -t angular-ml-platform:latest -p cpu-cluster
+
+      - name: Restart Angular deployment
+        run: |
+          kubectl rollout restart deployment/angular-app-deployment -n app

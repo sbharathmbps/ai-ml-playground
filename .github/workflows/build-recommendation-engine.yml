@@ -1,0 +1,24 @@
+name: Build Recommendation Engine Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'containers/resume_salary_intelligence/recommendation_engine/requirements.txt'
+      - 'containers/resume_salary_intelligence/recommendation_engine/Dockerfile-env'
+      - 'containers/resume_salary_intelligence/recommendation_engine/codes/**'
+
+jobs:
+  build:
+    name: Build recommendation engine image
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build recommendation engine image
+        working-directory: containers/resume_salary_intelligence/recommendation_engine
+        run: |
+          minikube image build -f Dockerfile-env . -t recommendation-engine-env:python-3.12 -p cpu-cluster

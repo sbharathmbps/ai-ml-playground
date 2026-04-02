@@ -1,0 +1,24 @@
+name: Build Salary Prediction Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'containers/resume_salary_intelligence/salary_prediction/requirements.txt'
+      - 'containers/resume_salary_intelligence/salary_prediction/Dockerfile-env'
+      - 'containers/resume_salary_intelligence/salary_prediction/codes/**'
+
+jobs:
+  build:
+    name: Build salary prediction minikube image
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build salary prediction image
+        working-directory: containers/resume_salary_intelligence/salary_prediction
+        run: |
+          minikube image build -f Dockerfile-env . -t salary-prediction-env:python-3.12 -p cpu-cluster

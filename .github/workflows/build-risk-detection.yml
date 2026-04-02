@@ -1,0 +1,24 @@
+name: Build Risk Detection Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'containers/risk_warning_system/risk_detection/requirements.txt'
+      - 'containers/risk_warning_system/risk_detection/Dockerfile-env'
+      - 'containers/risk_warning_system/risk_detection/codes/**'
+
+jobs:
+  build:
+    name: Build risk detection minikube image
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build risk detection image
+        working-directory: containers/risk_warning_system/risk_detection
+        run: |
+          minikube image build -f Dockerfile-env . -t risk-detection-env:python-3.12 -p cpu-cluster
