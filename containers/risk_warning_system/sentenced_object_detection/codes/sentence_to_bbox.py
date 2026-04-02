@@ -180,8 +180,8 @@ if __name__ == '__main__':
     workflow_name = args.workflow_name
     folder_name = args.folder_name
 
-    os.makedirs(OUTPUT_PATH, exist_ok=True)
     IMAGE_PATH = os.path.join(src, os.listdir(src)[0])
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
 
     # ================= LOAD RISK FACTORS =================
     SessionLocal, engine = get_local_session()

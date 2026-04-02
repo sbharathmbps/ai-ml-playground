@@ -71,10 +71,10 @@ spec:
                 args: ["--src","{{inputs.parameters.src}}", "--dest","{{inputs.parameters.dest}}", "--config","{{inputs.parameters.config}}", "--workflow_name", "{{workflow.name}}", "--folder_name", "{{workflow.parameters.folder_name}}", "--data", "{{workflow.parameters.data}}"]
                 resources:
                     requests:
-                        memory: "12Gi"
+                        memory: "1Gi"
                         cpu: "1"
                     limits:
-                        memory: "24Gi"
+                        memory: "10Gi"
                         cpu: "15"
                 volumeMounts:
                     - name: input-data

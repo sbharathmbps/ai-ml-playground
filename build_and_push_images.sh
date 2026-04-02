@@ -1,13 +1,9 @@
-# cd /mnt/data/ml-platform/containers/risk_warning_system/sentenced_object_detection
-# minikube image build -f Dockerfile-env . -t sentenced-obj-det-env:python-3.10-slim -p cpu-cluster
-# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
+cd /mnt/data/ml-platform/containers/risk_warning_system/sentenced_object_detection
+minikube image build -f Dockerfile-env . -t sentenced-obj-det-env:python-3.10-slim -p cpu-cluster
 
 
 # cd /mnt/data/ml-platform/containers/risk_warning_system/sentenced_object_detection
 # minikube image build -f Dockerfile-cli-input . -t sentenced-obj-det-cli-input:python-3.10-slim -p cpu-cluster
-# # docker tag chatbot-cli-input:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm  
-# # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm 
 
  
 # docker run --rm \
@@ -24,16 +20,12 @@
 #=====================================================================================================================================================================================================================
 
 
-cd /mnt/data/ml-platform/containers/risk_warning_system/risk_detection
-minikube image build -f Dockerfile-env . -t risk-detection-env:python-3.12 -p cpu-cluster
-# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
+# cd /mnt/data/ml-platform/containers/risk_warning_system/risk_detection
+# minikube image build -f Dockerfile-env . -t risk-detection-env:python-3.12 -p cpu-cluster
 
 
 # cd /mnt/data/ml-platform/containers/risk_warning_system/risk_detection
 # minikube image build -f Dockerfile-cli-input . -t risk-detection-cli-input:python-3.12 -p cpu-cluster
-# # docker tag chatbot-cli-input:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm  
-# # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm 
 
 
 # docker run --rm \
@@ -50,54 +42,38 @@ minikube image build -f Dockerfile-env . -t risk-detection-env:python-3.12 -p cp
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction
 # minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster
-# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction
 # minikube image build -f Dockerfile-cli-input . -t field-extraction-cli-input:python-3.10-slim -p cpu-cluster
-# docker tag chatbot-cli-input:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm  
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm 
 
 #=====================================================================================================================================================================================================================
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/recommendation_engine
 # minikube image build -f Dockerfile-env . -t recommendation-engine-env:python-3.12 -p cpu-cluster
-# # docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
-# # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/recommendation_engine
 # minikube image build -f Dockerfile-cli-input . -t recommendation-engine-cli-input:python-3.12 -p cpu-cluster
-# # docker tag chatbot-cli-input:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm  
-# # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm 
 
 #=====================================================================================================================================================================================================================
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/salary_prediction
 # minikube image build -f Dockerfile-env . -t salary-prediction-env:python-3.12 -p cpu-cluster
-# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/salary_prediction
 # minikube image build -f Dockerfile-cli-input . -t salary-prediction-cli-input:python-3.12 -p cpu-cluster
-# # docker tag chatbot-cli-input:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm  
-# # docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-cli-input:python-3.12.11-slim-bookworm 
 
 ##=====================================================================================================================================================================================================================
 
 # cd /mnt/data/ml-platform/containers/Fastapi_inferencing
 # minikube image build -f Dockerfile-env . -t inference-engine-fastapi:python-3.11.13-slim -p cpu-cluster
-# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm  
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm                            
 
 ##=====================================================================================================================================================================================================================
 
 # cd /mnt/data/ml-platform/containers/shopping_chatbot
 # minikube image build -f Dockerfile-env . -t ollama-chatbot:python-3.12 -p cpu-cluster
-# docker tag chatbot-env:python-3.12.11-slim-bookworm us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm
-# docker push us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/test/chatbot-env:python-3.12.11-slim-bookworm
 
 ##=====================================================================================================================================================================================================================
 

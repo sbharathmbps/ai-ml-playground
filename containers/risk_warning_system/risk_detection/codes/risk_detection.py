@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.INFO)
 
 MODEL_ID = "Qwen/Qwen3-VL-4B-Instruct"
 MODEL_REVISION = os.getenv("QWEN_MODEL_REVISION")
+MAX_IMAGE_SIDE = int(os.getenv("RISK_DETECTION_MAX_IMAGE_SIDE", "1280"))
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -100,6 +101,10 @@ Rules:
 def analyze_image_for_risk(image_path):
 
     image = Image.open(image_path).convert("RGB")
+
+    # Bound image size before VLM inference to reduce CPU latency and memory.
+    if max(image.size) > MAX_IMAGE_SIDE:
+        image.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.Resampling.LANCZOS)
 
     messages = [
         {
