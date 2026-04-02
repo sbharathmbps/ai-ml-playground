@@ -263,5 +263,3 @@ if __name__ == "__main__":
 #     "Curent_Location": "Current city/location of the candidate"
 # }
 # """
-
-##
