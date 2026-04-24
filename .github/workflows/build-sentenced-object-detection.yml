@@ -1,28 +1,28 @@
-name: Build Sentenced Object Detection Image
+# name: Build Sentenced Object Detection Image
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'containers/risk_warning_system/sentenced_object_detection/requirements.txt'
-      - 'containers/risk_warning_system/sentenced_object_detection/Dockerfile-env'
-      - 'containers/risk_warning_system/sentenced_object_detection/codes/**'
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'containers/risk_warning_system/sentenced_object_detection/requirements.txt'
+#       - 'containers/risk_warning_system/sentenced_object_detection/Dockerfile-env'
+#       - 'containers/risk_warning_system/sentenced_object_detection/codes/**'
 
-concurrency:
-  group: minikube-build
-  cancel-in-progress: false
+# concurrency:
+#   group: minikube-build
+#   cancel-in-progress: false
 
-jobs:
-  build:
-    name: Build sentenced object detection minikube image
-    runs-on: self-hosted
+# jobs:
+#   build:
+#     name: Build sentenced object detection minikube image
+#     runs-on: self-hosted
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Build sentenced object detection image
-        working-directory: containers/risk_warning_system/sentenced_object_detection
-        run: |
-          minikube image build -f Dockerfile-env . -t sentenced-obj-det-env:python-3.10-slim -p cpu-cluster
+#       - name: Build sentenced object detection image
+#         working-directory: containers/risk_warning_system/sentenced_object_detection
+#         run: |
+#           minikube image build -f Dockerfile-env . -t sentenced-obj-det-env:python-3.10-slim -p cpu-cluster

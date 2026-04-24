@@ -1,28 +1,28 @@
-name: Build Field Extraction Image
+# name: Build Field Extraction Image
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'containers/resume_salary_intelligence/field_extraction/requirements.txt'
-      - 'containers/resume_salary_intelligence/field_extraction/Dockerfile-env'
-      - 'containers/resume_salary_intelligence/field_extraction/codes/**'
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'containers/resume_salary_intelligence/field_extraction/requirements.txt'
+#       - 'containers/resume_salary_intelligence/field_extraction/Dockerfile-env'
+#       - 'containers/resume_salary_intelligence/field_extraction/codes/**'
 
-concurrency:
-  group: minikube-build
-  cancel-in-progress: false
+# concurrency:
+#   group: minikube-build
+#   cancel-in-progress: false
 
-jobs:
-  build:
-    name: Build field extraction minikube image
-    runs-on: self-hosted
+# jobs:
+#   build:
+#     name: Build field extraction minikube image
+#     runs-on: self-hosted
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Build field extraction image
-        working-directory: containers/resume_salary_intelligence/field_extraction
-        run: |
-          minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster
+#       - name: Build field extraction image
+#         working-directory: containers/resume_salary_intelligence/field_extraction
+#         run: |
+#           minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster

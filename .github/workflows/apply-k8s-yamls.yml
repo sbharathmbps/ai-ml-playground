@@ -1,32 +1,32 @@
-name: Apply Kubernetes YAMLs
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'kubernetes_deployment/yamls/**'
+# name: Apply Kubernetes YAMLs
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'kubernetes_deployment/yamls/**'
 
-jobs:
-  kubectl-apply:
-    name: kubectl apply
-    runs-on: self-hosted
+# jobs:
+#   kubectl-apply:
+#     name: kubectl apply
+#     runs-on: self-hosted
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 2
 
-      - name: Get changed YAML files
-        id: changed
-        run: |
-          FILES=$(git diff --name-only HEAD^ HEAD -- 'kubernetes_deployment/yamls/**' | tr '\n' ' ')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
+#       - name: Get changed YAML files
+#         id: changed
+#         run: |
+#           FILES=$(git diff --name-only HEAD^ HEAD -- 'kubernetes_deployment/yamls/**' | tr '\n' ' ')
+#           echo "files=$FILES" >> $GITHUB_OUTPUT
 
-      - name: Apply changed Kubernetes manifests
-        if: steps.changed.outputs.files != ''
-        run: |
-          for f in ${{ steps.changed.outputs.files }}; do
-            echo "Applying $f"
-            kubectl apply -f "$f"
-          done
+#       - name: Apply changed Kubernetes manifests
+#         if: steps.changed.outputs.files != ''
+#         run: |
+#           for f in ${{ steps.changed.outputs.files }}; do
+#             echo "Applying $f"
+#             kubectl apply -f "$f"
+#           done
