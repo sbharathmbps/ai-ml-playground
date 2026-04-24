@@ -102,9 +102,6 @@ def create_table(engine):
     Base.metadata.create_all(bind=engine)
 
 
-def create_table_uvision(engine_uvision):
-    Base.metadata.create_all(bind=engine_uvision)
-
 def update_progress(SessionLocal, status, progress, job_id):
     session = SessionLocal()
 

@@ -7,6 +7,10 @@ on:
     paths:
       - 'containers/Angular/**'
 
+concurrency:
+  group: minikube-build
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     name: Build image and restart deployment

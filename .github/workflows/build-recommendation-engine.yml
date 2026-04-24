@@ -9,6 +9,10 @@ on:
       - 'containers/resume_salary_intelligence/recommendation_engine/Dockerfile-env'
       - 'containers/resume_salary_intelligence/recommendation_engine/codes/**'
 
+concurrency:
+  group: minikube-build
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build recommendation engine image

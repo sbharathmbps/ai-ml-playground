@@ -40,8 +40,8 @@
 
 ##=====================================================================================================================================================================================================================
 
-# cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction
-# minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster
+cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction
+minikube image build -f Dockerfile-env . -t field-extraction-env:python-3.10-slim -p cpu-cluster
 
 
 # cd /mnt/data/ml-platform/containers/resume_salary_intelligence/field_extraction

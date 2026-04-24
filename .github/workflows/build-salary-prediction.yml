@@ -9,6 +9,10 @@ on:
       - 'containers/resume_salary_intelligence/salary_prediction/Dockerfile-env'
       - 'containers/resume_salary_intelligence/salary_prediction/codes/**'
 
+concurrency:
+  group: minikube-build
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build salary prediction minikube image

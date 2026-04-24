@@ -19,7 +19,3 @@ COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 WORKDIR /app
-
-# inference-engine-fastapi-env:python-3.11.13-slim
-# minikube image build -f Dockerfile-env -t inference-engine-fastapi-env:python-3.11.13-slim .
-# docker tag inference-engine-fastapi-env:python-3.11.13-slim us-central1-docker.pkg.dev/utilities-vision/uvision-kubernetes-deployment/inference-engine-fastapi-env:python-3.11.13-slim

@@ -9,6 +9,10 @@ on:
       - 'containers/resume_salary_intelligence/field_extraction/Dockerfile-env'
       - 'containers/resume_salary_intelligence/field_extraction/codes/**'
 
+concurrency:
+  group: minikube-build
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build field extraction minikube image

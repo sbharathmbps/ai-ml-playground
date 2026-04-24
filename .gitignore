@@ -26,6 +26,8 @@ venv/
 *.log
 
 dev_test/
+kubernetes_deployment/test/
+kubernetes_deployment/yamls/2-general-secrets.yaml
 
 # GitHub Actions self-hosted runner
 actions-runner/

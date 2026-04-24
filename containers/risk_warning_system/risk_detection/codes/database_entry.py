@@ -86,10 +86,6 @@ def get_local_session():
 def create_table(engine):
     # Create database table if not exists
     Base.metadata.create_all(bind=engine)
- 
-def create_table_uvision(engineUvision):
-    # Create database table if not exists
-    Base.metadata.create_all(bind=engineUvision)
 
 
 def update_progress(SessionLocal, status, progress, job_id):
@@ -262,7 +258,3 @@ if __name__ == "__main__":
     id1 = add_data(SessionLocal=SessionLocal, project="project" , job_name="job_name", status="status")
     print(f"Inserted record ID: {id1}")
  
-    # First insert
-    SessionLocalUvision, engineUvision = get_local_session_uvision()
-    id1 = add_detection_data(SessionLocalUvision, class_name="pole", x_min=23, y_min=41, x_max=57, y_max=64, score=99)
-    # id1 = add_damage_detection_data(SessionLocal, good_portion_percentage=24, severe_damage_percentage=24, moderate_damage_percentage=24, low_damage_percentage=24, damaged_or_not="yes")

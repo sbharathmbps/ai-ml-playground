@@ -9,6 +9,10 @@ on:
       - 'containers/risk_warning_system/risk_detection/Dockerfile-env'
       - 'containers/risk_warning_system/risk_detection/codes/**'
 
+concurrency:
+  group: minikube-build
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build risk detection minikube image
